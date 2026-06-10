@@ -89,8 +89,14 @@ class SettingsService:
             for a in assets
         ]
 
-    def update_asset(self, asset_id: int, name: str | None = None, notes: str | None = None) -> None:
-        self._asset_repo.update(id=asset_id, name=name, notes=notes)
+    def update_asset(
+        self,
+        asset_id: int,
+        name: str | None = None,
+        notes: str | None = None,
+        asset_class: AssetClass | None = None,
+    ) -> None:
+        self._asset_repo.update(id=asset_id, name=name, notes=notes, asset_class=asset_class)
 
     def deactivate_asset(self, asset_id: int) -> None:
         self._asset_repo.deactivate(id=asset_id)

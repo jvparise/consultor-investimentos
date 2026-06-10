@@ -77,8 +77,8 @@ class AssetRepository:
         id: int,
         name: str | None = None,
         notes: str | None = None,
+        asset_class: AssetClass | None = None,
     ) -> Asset:
-        # ticker, asset_class e tracking_type são imutáveis após criação (ADR-006)
         asset = self.get_by_id(id)
         if asset is None:
             raise ValueError(f"Ativo com id={id} não encontrado.")
@@ -87,6 +87,8 @@ class AssetRepository:
             asset.name = name.strip()
         if notes is not None:
             asset.notes = notes
+        if asset_class is not None:
+            asset.asset_class = asset_class.value
 
         self._session.flush()
         return asset

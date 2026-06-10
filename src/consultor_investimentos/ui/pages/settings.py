@@ -374,6 +374,10 @@ else:
                 with st.form(f"form_edit_{asset_id}"):
                     new_name = st.text_input("Nome", value=asset["name"])
                     new_notes = st.text_area("Observações", value=asset["notes"], max_chars=200)
+                    current_class = asset["asset_class"]
+                    all_classes = [cls.value for cls in AssetClass]
+                    default_idx = all_classes.index(current_class) if current_class in all_classes else 0
+                    new_class_val = st.selectbox("Classe", options=all_classes, index=default_idx)
                     if is_unpriced:
                         st.warning("Ativo sem preço registrado. Atualize o preço em **Carteira**.")
                     if st.form_submit_button("💾 Salvar", type="primary"):
@@ -381,11 +385,13 @@ else:
                             st.error("Nome não pode ser vazio.")
                         else:
                             try:
+                                new_class = AssetClass(new_class_val) if new_class_val != current_class else None
                                 with get_db() as session:
                                     SettingsService(session).update_asset(
                                         asset_id=asset_id,
                                         name=new_name.strip(),
                                         notes=new_notes.strip(),
+                                        asset_class=new_class,
                                     )
                                 st.session_state[SUCCESS_MSG] = f"{ticker} atualizado."
                                 st.session_state[EDIT_ASSET_ID] = None
