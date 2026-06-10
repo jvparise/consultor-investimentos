@@ -30,4 +30,19 @@ Regras:
 
 ---
 
+## 🆕 Novidades da v1.2
+
+✓ Importação de extratos CSV/XLSX com preview de validação  
+✓ Idempotência por hash de arquivo  
+✓ Audit log de importações  
+✓ Atualização em lote de ativos VALUE_ONLY  
+✓ Inputs monetários no formato brasileiro (R$ 1.234,56)  
+✓ Modo privacidade (oculta valores sensíveis na tela)  
+✓ Classes de ativos V2
+  - ETF — categoria independente de Ações
+  - FII Tijolo — separado de FII Papel
+  - FII Papel — separado de FII Tijolo
+
+---
+
 ## ⚙️ Fluxo de Importação
