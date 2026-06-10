@@ -8,6 +8,7 @@ from consultor_investimentos.config import AssetTrackingType
 from consultor_investimentos.database.connection import get_db
 from consultor_investimentos.services.portfolio_service import PortfolioService
 from consultor_investimentos.services.settings_service import SettingsService
+from consultor_investimentos.ui.state import CONFIRM_REACTIVATE_ASSET_ID
 from consultor_investimentos.ui.components.charts import allocation_donut
 from consultor_investimentos.ui.components.metrics import (
     fmt_brl,
@@ -276,3 +277,48 @@ if summary.unpriced_tickers:
                     st.rerun()
                 except (ValueError, Exception) as e:
                     st.error(f"Erro: {e}")
+
+# ── Ativos inativos ───────────────────────────────────────────────────────────
+with get_db() as session:
+    inactive_assets = SettingsService(session).get_inactive_assets()
+
+if inactive_assets:
+    st.markdown("---")
+    st.subheader("📦 Ativos Inativos")
+    st.caption("Ativos desativados. Reative para incluí-los novamente na carteira.")
+
+    confirm_react_key = CONFIRM_REACTIVATE_ASSET_ID
+
+    for asset in inactive_assets:
+        asset_id = asset["id"]
+        is_confirming = st.session_state.get(confirm_react_key) == asset_id
+
+        with st.expander(
+            f"**{asset['ticker']}** — {asset['name']} · {asset['asset_class']}",
+            expanded=is_confirming,
+        ):
+            if not is_confirming:
+                if st.button("🔄 Reativar", key=f"react_btn_{asset_id}"):
+                    st.session_state[confirm_react_key] = asset_id
+                    st.rerun()
+            else:
+                st.warning(f"Confirma a reativação de **{asset['ticker']} — {asset['name']}**?")
+                c1, c2 = st.columns(2)
+                with c1:
+                    if st.button(
+                        "✅ Confirmar reativação",
+                        type="primary",
+                        key=f"confirm_react_{asset_id}",
+                    ):
+                        try:
+                            with get_db() as session:
+                                SettingsService(session).reactivate_asset(asset_id)
+                            st.session_state.pop(confirm_react_key, None)
+                            st.session_state[SUCCESS_MSG] = f"{asset['ticker']} reativado com sucesso."
+                            st.rerun()
+                        except Exception as e:
+                            st.error(f"Erro: {e}")
+                with c2:
+                    if st.button("❌ Cancelar", key=f"cancel_react_{asset_id}"):
+                        st.session_state.pop(confirm_react_key, None)
+                        st.rerun()

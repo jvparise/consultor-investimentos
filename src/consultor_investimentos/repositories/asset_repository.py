@@ -101,3 +101,21 @@ class AssetRepository:
             )
         asset.is_active = False
         self._session.flush()
+
+    def reactivate(self, id: int) -> None:
+        asset = self.get_by_id(id)
+        if asset is None:
+            raise ValueError(f"Ativo com id={id} não encontrado.")
+        if asset.is_active:
+            raise ValueError(f"Ativo '{asset.ticker}' já está ativo.")
+        asset.is_active = True
+        self._session.flush()
+
+    def get_inactive(self) -> list[Asset]:
+        return list(
+            self._session.execute(
+                select(Asset)
+                .where(Asset.is_active == False)  # noqa: E712
+                .order_by(Asset.ticker)
+            ).scalars().all()
+        )

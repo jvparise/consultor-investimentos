@@ -90,3 +90,18 @@ class SettingsService:
 
     def deactivate_asset(self, asset_id: int) -> None:
         self._asset_repo.deactivate(id=asset_id)
+
+    def reactivate_asset(self, asset_id: int) -> None:
+        self._asset_repo.reactivate(id=asset_id)
+
+    def get_inactive_assets(self) -> list[dict]:
+        assets = self._asset_repo.get_inactive()
+        return [
+            {
+                "id": a.id,
+                "ticker": a.ticker,
+                "name": a.name,
+                "asset_class": a.asset_class,
+            }
+            for a in assets
+        ]

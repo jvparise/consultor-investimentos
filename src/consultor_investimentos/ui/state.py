@@ -17,6 +17,7 @@ EDIT_GOAL_ID = "edit_goal_id"
 CONFIRM_DELETE_TX_ID = "confirm_delete_tx_id"
 CONFIRM_DEACTIVATE_ASSET_ID = "confirm_deactivate_asset_id"
 CONFIRM_DEACTIVATE_GOAL_ID = "confirm_deactivate_goal_id"
+CONFIRM_REACTIVATE_ASSET_ID = "confirm_reactivate_asset_id"
 
 # Filtros de página
 TX_SELECTED_ASSET_ID = "tx_selected_asset_id"
