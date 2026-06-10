@@ -191,7 +191,13 @@ class UserSettings(Base):
     target_fixed_pct: Mapped[Decimal] = mapped_column(
         Numeric(5, 2), default=Decimal("0")
     )
-    target_fii_pct: Mapped[Decimal] = mapped_column(
+    target_etf_pct: Mapped[Decimal] = mapped_column(
+        Numeric(5, 2), default=Decimal("0")
+    )
+    target_fii_brick_pct: Mapped[Decimal] = mapped_column(
+        Numeric(5, 2), default=Decimal("0")
+    )
+    target_fii_paper_pct: Mapped[Decimal] = mapped_column(
         Numeric(5, 2), default=Decimal("0")
     )
     target_intl_pct: Mapped[Decimal] = mapped_column(

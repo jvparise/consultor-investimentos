@@ -68,7 +68,7 @@ def test_get_target_pct(session: Session) -> None:
     dto = svc.get_settings()
     assert svc.get_target_pct(dto, AssetClass.EQUITY) == 70.0
     assert svc.get_target_pct(dto, AssetClass.FIXED_INCOME) == 30.0
-    assert svc.get_target_pct(dto, AssetClass.FII) == 0.0
+    assert svc.get_target_pct(dto, AssetClass.FII_BRICK) == 0.0
 
 
 def test_update_asset_altera_nome(session: Session) -> None:
@@ -262,7 +262,7 @@ def test_create_asset_ticker_normalizado_maiusculo(session: Session) -> None:
     asset_id = SettingsService(session).create_asset(
         ticker="bcff11",
         name="BTG Pactual Fundo",
-        asset_class=AssetClass.FII,
+        asset_class=AssetClass.FII_BRICK,
         tracking_type=AssetTrackingType.QUANTITY_PRICE,
     )
     asset = AssetRepository(session).get_by_id(asset_id)
@@ -273,8 +273,8 @@ def test_get_active_assets_retorna_lista_de_dicts(session: Session) -> None:
     from consultor_investimentos.config import AssetClass, AssetTrackingType
 
     svc = SettingsService(session)
-    svc.create_asset(ticker="XPML11", name="XP Malls", asset_class=AssetClass.FII, tracking_type=AssetTrackingType.QUANTITY_PRICE)
-    svc.create_asset(ticker="HGLG11", name="CSHG Logística", asset_class=AssetClass.FII, tracking_type=AssetTrackingType.QUANTITY_PRICE)
+    svc.create_asset(ticker="XPML11", name="XP Malls", asset_class=AssetClass.FII_BRICK, tracking_type=AssetTrackingType.QUANTITY_PRICE)
+    svc.create_asset(ticker="HGLG11", name="CSHG Logística", asset_class=AssetClass.FII_BRICK, tracking_type=AssetTrackingType.QUANTITY_PRICE)
 
     assets = svc.get_active_assets()
     assert len(assets) == 2

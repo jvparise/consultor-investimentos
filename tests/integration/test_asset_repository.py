@@ -124,13 +124,13 @@ def test_get_active_by_class(session: Session) -> None:
     repo.create(
         ticker="MXRF11",
         name="Maxi Renda FII",
-        asset_class=AssetClass.FII,
+        asset_class=AssetClass.FII_BRICK,
         income_type=IncomeType.HYBRID,
         tracking_type=AssetTrackingType.QUANTITY_PRICE,
     )
 
     equities = repo.get_active_by_class(AssetClass.EQUITY)
-    fiis = repo.get_active_by_class(AssetClass.FII)
+    fiis = repo.get_active_by_class(AssetClass.FII_BRICK)
 
     assert len(equities) == 1
     assert equities[0].ticker == "VALE3"

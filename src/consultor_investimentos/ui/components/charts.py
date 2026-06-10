@@ -129,7 +129,9 @@ def allocation_gap_bars(
 ) -> go.Figure:
     target_map: dict[AssetClass, float] = {
         AssetClass.EQUITY: float(settings.target_equity_pct),
-        AssetClass.FII: float(settings.target_fii_pct),
+        AssetClass.ETF: float(settings.target_etf_pct),
+        AssetClass.FII_BRICK: float(settings.target_fii_brick_pct),
+        AssetClass.FII_PAPER: float(settings.target_fii_paper_pct),
         AssetClass.FIXED_INCOME: float(settings.target_fixed_pct),
         AssetClass.INTERNATIONAL: float(settings.target_intl_pct),
         AssetClass.CRYPTO: float(settings.target_crypto_pct),

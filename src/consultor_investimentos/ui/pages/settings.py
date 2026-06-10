@@ -102,21 +102,26 @@ st.caption("Defina o percentual alvo de cada classe. O total deve ser 0% (sem al
 
 col_a1, col_a2, col_a3 = st.columns(3)
 col_a4, col_a5, col_a6 = st.columns(3)
+col_a7, col_a8, _ = st.columns(3)
 
 with col_a1:
     eq_pct = st.number_input("Ações / BDRs (%)", 0.0, 100.0, float(settings.target_equity_pct), 5.0, "%.1f", key="alloc_eq")
 with col_a2:
     fi_pct = st.number_input("Renda Fixa (%)", 0.0, 100.0, float(settings.target_fixed_pct), 5.0, "%.1f", key="alloc_fi")
 with col_a3:
-    fii_pct = st.number_input("FIIs (%)", 0.0, 100.0, float(settings.target_fii_pct), 5.0, "%.1f", key="alloc_fii")
+    etf_pct = st.number_input("ETF (%)", 0.0, 100.0, float(settings.target_etf_pct), 5.0, "%.1f", key="alloc_etf")
 with col_a4:
-    intl_pct = st.number_input("Internacional (%)", 0.0, 100.0, float(settings.target_intl_pct), 5.0, "%.1f", key="alloc_intl")
+    fii_brick_pct = st.number_input("FII Tijolo (%)", 0.0, 100.0, float(settings.target_fii_brick_pct), 5.0, "%.1f", key="alloc_fii_brick")
 with col_a5:
-    crypto_pct = st.number_input("Cripto (%)", 0.0, 100.0, float(settings.target_crypto_pct), 5.0, "%.1f", key="alloc_crypto")
+    fii_paper_pct = st.number_input("FII Papel (%)", 0.0, 100.0, float(settings.target_fii_paper_pct), 5.0, "%.1f", key="alloc_fii_paper")
 with col_a6:
+    intl_pct = st.number_input("Internacional (%)", 0.0, 100.0, float(settings.target_intl_pct), 5.0, "%.1f", key="alloc_intl")
+with col_a7:
+    crypto_pct = st.number_input("Cripto (%)", 0.0, 100.0, float(settings.target_crypto_pct), 5.0, "%.1f", key="alloc_crypto")
+with col_a8:
     other_pct = st.number_input("Outros (%)", 0.0, 100.0, float(settings.target_other_pct), 5.0, "%.1f", key="alloc_other")
 
-alloc_total = eq_pct + fi_pct + fii_pct + intl_pct + crypto_pct + other_pct
+alloc_total = eq_pct + fi_pct + etf_pct + fii_brick_pct + fii_paper_pct + intl_pct + crypto_pct + other_pct
 if alloc_total == 0.0:
     st.info(f"Total: **0%** — nenhuma alocação alvo configurada.")
 elif abs(alloc_total - 100.0) < 0.01:
@@ -132,7 +137,9 @@ if st.button("💾 Salvar Alocação", key="btn_alloc"):
             SettingsService(session).update_settings({
                 "target_equity_pct": Decimal(str(eq_pct)),
                 "target_fixed_pct": Decimal(str(fi_pct)),
-                "target_fii_pct": Decimal(str(fii_pct)),
+                "target_etf_pct": Decimal(str(etf_pct)),
+                "target_fii_brick_pct": Decimal(str(fii_brick_pct)),
+                "target_fii_paper_pct": Decimal(str(fii_paper_pct)),
                 "target_intl_pct": Decimal(str(intl_pct)),
                 "target_crypto_pct": Decimal(str(crypto_pct)),
                 "target_other_pct": Decimal(str(other_pct)),
