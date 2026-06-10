@@ -114,12 +114,11 @@ def projection_lines(
     )
 
     fig.update_layout(
-        **_LAYOUT_DEFAULTS,
-        height=300,
-        margin=dict(l=10, r=90, t=20, b=10),
+        **{**_LAYOUT_DEFAULTS, "margin": dict(l=10, r=90, t=20, b=70)},
+        height=320,
         xaxis=dict(title="Meses", showgrid=False),
         yaxis=dict(tickprefix="R$ ", tickformat=",.0f", gridcolor="rgba(0,0,0,0.06)"),
-        legend=dict(orientation="h", yanchor="top", y=-0.15, xanchor="center", x=0.5),
+        legend=dict(orientation="h", yanchor="top", y=-0.25, xanchor="center", x=0.5),
     )
     return fig
 
@@ -172,10 +171,9 @@ def allocation_gap_bars(
     ))
 
     fig.update_layout(
-        **_LAYOUT_DEFAULTS,
+        **{**_LAYOUT_DEFAULTS, "margin": dict(l=10, r=20, t=10, b=40)},
         barmode="overlay",
         height=max(180, len(classes) * 36 + 60),
-        margin=dict(l=10, r=20, t=10, b=40),
         xaxis=dict(title="%", range=[0, 100], showgrid=False),
         legend=dict(orientation="h", yanchor="bottom", y=1.0, xanchor="right", x=1),
     )
