@@ -1,0 +1,16 @@
+﻿.venv/
+.env
+credentials/
+__pycache__/
+*.pyc
+.pytest_cache/
+dist/
+*.egg-info/
+
+# Banco de dados local
+data/*.db
+data/*.db-shm
+data/*.db-wal
+
+# Streamlit
+.streamlit/secrets.toml

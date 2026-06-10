@@ -1,0 +1,163 @@
+{
+  "ativos": {
+    "fiis": {
+      "MCCE11.SA": {
+        "nome": "MCCE11",
+        "quantidade": 30
+      },
+      "TGRE11.SA": {
+        "nome": "TGRE11",
+        "quantidade": 300
+      },
+      "XPAG11.SA": {
+        "nome": "XPAG11",
+        "quantidade": 300
+      },
+      "JURO11.SA": {
+        "nome": "JURO11",
+        "quantidade": 41
+      }
+    },
+    "acoes_us": {
+      "AMZN": {
+        "nome": "AMZ",
+        "quantidade": 0.65806
+      },
+      "AAPL": {
+        "nome": "AAPL",
+        "quantidade": 0.61612
+      },
+      "KO": {
+        "nome": "KO",
+        "quantidade": 2.0345
+      },
+      "CVX": {
+        "nome": "CVX",
+        "quantidade": 0.80369
+      },
+      "C": {
+        "nome": "C",
+        "quantidade": 1.87299
+      },
+      "MSFT": {
+        "nome": "MSFT",
+        "quantidade": 0.81591
+      },
+      "MCD": {
+        "nome": "MCD",
+        "quantidade": 0.71155
+      },
+      "MA": {
+        "nome": "MA",
+        "quantidade": 0.62695
+      },
+      "O": {
+        "nome": "O",
+        "quantidade": 2.24971
+      },
+      "NKE": {
+        "nome": "NKE",
+        "quantidade": 5.33868
+      },
+      "TSLA": {
+        "nome": "TSLA",
+        "quantidade": 0.70775
+      },
+      "JPM": {
+        "nome": "JPM",
+        "quantidade": 0.52654
+      },
+      "BRK-B": {
+        "nome": "BRK/B",
+        "quantidade": 0.40498
+      },
+      "NVDA": {
+        "nome": "NVDA",
+        "quantidade": 0.91025
+      }
+    },
+    "fundos": {
+      "XP FIRF": {
+        "nome": "XP FIRF",
+        "cnpj": "97.234.516/0001-07",
+        "valor_atual": 118522.14
+      },
+      "AZ QUEST": {
+        "nome": "AZ QUEST",
+        "cnpj": "11.758.741/0001-52",
+        "valor_atual": 25718.94
+      },
+      "Trend Tecnologia": {
+        "nome": "Trend Tecnologia",
+        "cnpj": "26.706.791/0001-06",
+        "valor_atual": 1883.05
+      }
+    },
+    "renda_fixa": {
+      "CDB Banco C6 Consignado": {
+        "tipo": "cdb_cdi",
+        "percentual_cdi": 1.0,
+        "valor_investido": 6000,
+        "data_inicio": ""
+      },
+      "CDB Original 2028": {
+        "tipo": "cdb_cdi",
+        "percentual_cdi": 1.0,
+        "valor_investido": 1000,
+        "data_inicio": ""
+      },
+      "CDB Banco C6 2027": {
+        "tipo": "cdb_cdi",
+        "percentual_cdi": 1.0,
+        "valor_investido": 1000,
+        "data_inicio": ""
+      },
+      "CDB Agiblank Fev 2027": {
+        "tipo": "cdb_prefixado",
+        "taxa_anual": 0.0,
+        "valor_investido": 1000,
+        "data_inicio": ""
+      },
+      "CDB Pine Juro Mensal Mar 2029": {
+        "tipo": "cdb_cdi",
+        "percentual_cdi": 1.0,
+        "valor_investido": 5000,
+        "data_inicio": ""
+      },
+      "CDB Agibank Juro Mensal Mar 2028": {
+        "tipo": "cdb_cdi",
+        "percentual_cdi": 1.0,
+        "valor_investido": 5000,
+        "data_inicio": ""
+      },
+      "CDB Agibank Juro Mensal Mar 2027": {
+        "tipo": "cdb_cdi",
+        "percentual_cdi": 1.0,
+        "valor_investido": 5000,
+        "data_inicio": ""
+      }
+    },
+    "manual": {
+      "CRA FS BIO 2029": {
+        "valor_atual": 4250.59
+      },
+      "CRA FS BIO 2030": {
+        "valor_atual": 4849.79
+      },
+      "CRA MARFRIG 2030": {
+        "valor_atual": 989.67
+      },
+      "DEB ENAUTA 2029": {
+        "valor_atual": 3015.68
+      },
+      "Caixinha Nubank": {
+        "valor_atual": 4002.46
+      }
+    }
+  },
+  "google_sheets": {
+    "spreadsheet_id": "1eEYkPtHT4Xm0aWCF8DT3C3UlQFpUHb6wpKoUi5VTwCw",
+    "aba_atual": "2026",
+    "aba_historico": "2024/2025"
+  }
+}
