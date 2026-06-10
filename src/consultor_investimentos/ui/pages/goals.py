@@ -12,6 +12,7 @@ from consultor_investimentos.services.projection_service import ProjectionServic
 from consultor_investimentos.services.settings_service import SettingsService
 from consultor_investimentos.ui.components.charts import projection_lines
 from consultor_investimentos.ui.components.metrics import fmt_brl, fmt_date_br, fmt_months, fmt_pct
+from consultor_investimentos.utils.brl import fmt_brl_input, parse_brl
 from consultor_investimentos.ui.state import (
     CONFIRM_DEACTIVATE_GOAL_ID,
     EDIT_GOAL_ID,
@@ -93,7 +94,7 @@ else:
         st.markdown("**Nova Meta**")
         with st.form("form_create_goal"):
             new_name    = st.text_input("Nome *", placeholder="Ex: Reserva de Emergência")
-            new_value   = st.number_input("Valor alvo (R$) *", min_value=0.0, step=1000.0, format="%.2f")
+            new_value   = st.text_input("Valor alvo (R$) *", placeholder="ex: 500.000,00")
             has_date    = st.checkbox("Definir data-alvo")
             new_date: date | None = None
             if has_date:
@@ -107,10 +108,11 @@ else:
 
         if create_btn:
             try:
+                target_value = parse_brl(new_value)
                 with get_db() as session:
                     GoalService(session).create_goal(
                         name=new_name,
-                        target_value=Decimal(str(new_value)),
+                        target_value=target_value,
                         target_date=new_date if has_date else None,
                     )
                 st.session_state.pop(GOAL_FORM_OPEN, None)
@@ -196,12 +198,10 @@ else:
                 st.markdown("---")
                 with st.form(f"form_edit_{goal.goal_id}"):
                     e_name = st.text_input("Nome", value=goal.goal_name)
-                    e_value = st.number_input(
+                    e_value = st.text_input(
                         "Valor alvo (R$)",
-                        value=float(goal.goal_target_value),
-                        min_value=0.01,
-                        step=1000.0,
-                        format="%.2f",
+                        value=fmt_brl_input(goal.goal_target_value),
+                        placeholder="ex: 500.000,00",
                     )
 
                     has_current_date = goal.goal_target_date is not None
@@ -225,6 +225,7 @@ else:
 
                 if save_btn:
                     try:
+                        edited_value = parse_brl(e_value)
                         with get_db() as session:
                             svc = GoalService(session)
                             if has_current_date:
@@ -232,14 +233,14 @@ else:
                                     svc.update_goal(
                                         goal.goal_id,
                                         name=e_name,
-                                        target_value=Decimal(str(e_value)),
+                                        target_value=edited_value,
                                         target_date=None,
                                     )
                                 else:
                                     svc.update_goal(
                                         goal.goal_id,
                                         name=e_name,
-                                        target_value=Decimal(str(e_value)),
+                                        target_value=edited_value,
                                         target_date=e_date,
                                     )
                             else:
@@ -247,14 +248,14 @@ else:
                                     svc.update_goal(
                                         goal.goal_id,
                                         name=e_name,
-                                        target_value=Decimal(str(e_value)),
+                                        target_value=edited_value,
                                         target_date=e_date,
                                     )
                                 else:
                                     svc.update_goal(
                                         goal.goal_id,
                                         name=e_name,
-                                        target_value=Decimal(str(e_value)),
+                                        target_value=edited_value,
                                     )
                         st.session_state.pop(EDIT_GOAL_ID, None)
                         st.session_state[SUCCESS_MSG] = f"Meta '{e_name.strip()}' atualizada."

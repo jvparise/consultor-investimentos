@@ -14,6 +14,7 @@ from consultor_investimentos.services.portfolio_service import PortfolioService
 from consultor_investimentos.services.snapshot_service import SnapshotService
 from consultor_investimentos.services.transaction_service import TransactionService
 from consultor_investimentos.ui.components.metrics import fmt_brl, fmt_date_br, fmt_price, fmt_qty
+from consultor_investimentos.utils.brl import parse_brl
 from consultor_investimentos.ui.state import (
     CONFIRM_DELETE_TX_ID,
     ERROR_MSG,
@@ -132,14 +133,15 @@ if is_buy_sell:
         )
         qty_val = Decimal(str(qty_input))
     with col_price:
-        price_input = st.number_input(
+        price_input = st.text_input(
             "Preço unitário (R$)",
-            min_value=0.0,
-            step=0.01,
-            format="%.2f",
+            placeholder="ex: 62,50",
             key=f"tx_price_{selected_id}_{tx_type_selected}",
         )
-        price_val = Decimal(str(price_input))
+        try:
+            price_val = parse_brl(price_input) if price_input.strip() else Decimal("0")
+        except ValueError:
+            price_val = Decimal("0")
 
     if qty_val > 0 and price_val > 0:
         total_val = (qty_val * price_val).quantize(Decimal("0.01"))
@@ -148,40 +150,43 @@ if is_buy_sell:
         st.caption("Preencha quantidade e preço para ver o total.")
         total_val = Decimal("0")
 
-    fees_input = st.number_input(
+    fees_raw = st.text_input(
         "Taxas / Corretagem (R$)",
-        min_value=0.0,
-        step=0.01,
-        format="%.2f",
+        placeholder="ex: 4,90",
         key=f"tx_fees_{selected_id}_{tx_type_selected}",
     )
-    fees_val = Decimal(str(fees_input))
+    try:
+        fees_val = parse_brl(fees_raw) if fees_raw.strip() else Decimal("0")
+    except ValueError:
+        fees_val = Decimal("0")
 
 else:
-    total_input = st.number_input(
+    total_raw = st.text_input(
         "Valor (R$)",
-        min_value=0.0,
-        step=0.01,
-        format="%.2f",
+        placeholder="ex: 1.500,00",
         key=f"tx_total_{selected_id}_{tx_type_selected}",
         help="Para Resgate: valor retirado. Para Aporte: valor aplicado.",
     )
-    total_val = Decimal(str(total_input))
+    try:
+        total_val = parse_brl(total_raw) if total_raw.strip() else Decimal("0")
+    except ValueError:
+        total_val = Decimal("0")
     fees_val = Decimal("0")
 
     if is_value_update:
-        new_pos_input = st.number_input(
+        new_pos_raw = st.text_input(
             "Novo valor da posição após operação (R$) — opcional",
-            min_value=0.0,
-            step=0.01,
-            format="%.2f",
+            placeholder="ex: 25.000,00",
             key=f"tx_newpos_{selected_id}_{tx_type_selected}",
             help=(
                 "Se informado, registra automaticamente o preço da posição para essa data. "
-                "Deixe em 0 para não atualizar."
+                "Deixe em branco para não atualizar."
             ),
         )
-        new_pos_val = Decimal(str(new_pos_input)) if new_pos_input > 0 else None
+        try:
+            new_pos_val = parse_brl(new_pos_raw) if new_pos_raw.strip() else None
+        except ValueError:
+            new_pos_val = None
 
 notes_input: str | None = st.text_input(
     "Observações (opcional)",
@@ -195,14 +200,21 @@ if st.button("✅ Registrar", type="primary", key=f"tx_submit_{selected_id}"):
     if is_buy_sell:
         if qty_val <= 0:
             error = "Quantidade deve ser maior que zero."
+        elif price_input.strip() and price_val <= 0:
+            error = f"Preço unitário inválido: '{price_input}'."
         elif price_val <= 0:
             error = "Preço unitário deve ser maior que zero."
         else:
             final_total = total_val + fees_val
     else:
-        if total_val <= 0:
+        if total_raw.strip() and total_val <= 0:
+            try:
+                parse_brl(total_raw)
+            except ValueError as exc:
+                error = str(exc)
+        if not error and total_val <= 0:
             error = "Valor deve ser maior que zero."
-        else:
+        if not error:
             final_total = total_val
 
     if error:

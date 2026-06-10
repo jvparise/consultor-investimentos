@@ -10,6 +10,7 @@ from consultor_investimentos.services.portfolio_service import PortfolioService
 from consultor_investimentos.services.settings_service import SettingsService
 from consultor_investimentos.services.transaction_service import TransactionService
 from consultor_investimentos.ui.components.metrics import fmt_brl
+from consultor_investimentos.utils.brl import fmt_brl_input, parse_brl
 from consultor_investimentos.ui.state import (
     CONFIRM_DEACTIVATE_ASSET_ID,
     EDIT_ASSET_ID,
@@ -62,29 +63,27 @@ st.subheader("💰 Configurações Financeiras")
 with st.form("form_financial"):
     col_f1, col_f2 = st.columns(2)
     with col_f1:
-        contribution_input = st.number_input(
+        contribution_input = st.text_input(
             "Aporte Mensal (R$)",
-            min_value=0.0,
-            value=float(settings.monthly_contribution),
-            step=100.0,
-            format="%.2f",
+            value=fmt_brl_input(settings.monthly_contribution),
+            placeholder="ex: 3.000,00",
             help="Valor que você aporta todo mês na carteira.",
         )
     with col_f2:
-        expenses_input = st.number_input(
+        expenses_input = st.text_input(
             "Gastos Mensais (R$)",
-            min_value=0.0,
-            value=float(settings.monthly_expenses),
-            step=100.0,
-            format="%.2f",
+            value=fmt_brl_input(settings.monthly_expenses),
+            placeholder="ex: 5.000,00",
             help="Seus gastos médios mensais — usado para calcular a meta FIRE (gastos × 300).",
         )
     if st.form_submit_button("💾 Salvar Financeiro"):
         try:
+            contribution = parse_brl(contribution_input) if contribution_input.strip() else Decimal("0")
+            expenses = parse_brl(expenses_input) if expenses_input.strip() else Decimal("0")
             with get_db() as session:
                 SettingsService(session).update_settings({
-                    "monthly_contribution": Decimal(str(contribution_input)),
-                    "monthly_expenses": Decimal(str(expenses_input)),
+                    "monthly_contribution": contribution,
+                    "monthly_expenses": expenses,
                 })
             st.session_state[SUCCESS_MSG] = "Configurações financeiras atualizadas."
             st.rerun()
@@ -208,13 +207,17 @@ if st.session_state.get(SETTINGS_ASSET_STEP) == "open":
                 with c1:
                     na_bal_qty = st.number_input("Quantidade", min_value=0.0, step=1.0, format="%.6f", key="na_qty")
                 with c2:
-                    na_bal_unit = st.number_input("Preço unitário (R$)", min_value=0.0, step=0.01, format="%.2f", key="na_unit")
-                if na_bal_qty > 0 and na_bal_unit > 0:
-                    total_calc = Decimal(str(na_bal_qty)) * Decimal(str(na_bal_unit))
+                    na_bal_unit = st.text_input("Preço unitário (R$)", placeholder="ex: 62,50", key="na_unit")
+                try:
+                    unit_val = parse_brl(na_bal_unit) if na_bal_unit.strip() else Decimal("0")
+                except ValueError:
+                    unit_val = Decimal("0")
+                if na_bal_qty > 0 and unit_val > 0:
+                    total_calc = Decimal(str(na_bal_qty)) * unit_val
                     st.caption(f"Total calculado: **{fmt_brl(total_calc)}**")
             else:
-                na_bal_total = st.number_input(
-                    "Valor total da posição (R$)", min_value=0.0, step=100.0, format="%.2f", key="na_total"
+                na_bal_total = st.text_input(
+                    "Valor total da posição (R$)", placeholder="ex: 10.000,00", key="na_total"
                 )
 
         c_save, c_cancel = st.columns(2)
@@ -232,14 +235,29 @@ if st.session_state.get(SETTINGS_ASSET_STEP) == "open":
             name_clean = na_name.strip()
             errors: list[str] = []
 
+            # Parse dos campos monetários
+            parsed_unit: Decimal = Decimal("0")
+            parsed_total: Decimal = Decimal("0")
+            if with_balance and na_bal_date:
+                if na_tracking == AssetTrackingType.QUANTITY_PRICE:
+                    try:
+                        parsed_unit = parse_brl(na_bal_unit) if na_bal_unit.strip() else Decimal("0")
+                    except ValueError:
+                        errors.append(f"Preço unitário inválido: '{na_bal_unit}'.")
+                else:
+                    try:
+                        parsed_total = parse_brl(na_bal_total) if na_bal_total.strip() else Decimal("0")
+                    except ValueError:
+                        errors.append(f"Valor total inválido: '{na_bal_total}'.")
+
             if not ticker_clean:
                 errors.append("Ticker obrigatório.")
             if not name_clean:
                 errors.append("Nome obrigatório.")
             if with_balance and na_bal_date:
-                if na_tracking == AssetTrackingType.QUANTITY_PRICE and (na_bal_qty <= 0 or na_bal_unit <= 0):
+                if na_tracking == AssetTrackingType.QUANTITY_PRICE and (na_bal_qty <= 0 or parsed_unit <= 0):
                     errors.append("Quantidade e preço unitário devem ser maiores que zero.")
-                if na_tracking == AssetTrackingType.VALUE_ONLY and na_bal_total <= 0:
+                if na_tracking == AssetTrackingType.VALUE_ONLY and parsed_total <= 0:
                     errors.append("Valor total do saldo inicial deve ser maior que zero.")
 
             if errors:
@@ -258,21 +276,20 @@ if st.session_state.get(SETTINGS_ASSET_STEP) == "open":
                         if with_balance and na_bal_date:
                             if na_tracking == AssetTrackingType.QUANTITY_PRICE:
                                 qty_d = Decimal(str(na_bal_qty))
-                                unit_d = Decimal(str(na_bal_unit))
                                 TransactionService(session).register(
                                     asset_id=asset_id,
                                     transaction_type=TransactionType.INITIAL_BALANCE,
                                     tx_date=na_bal_date,
-                                    total_amount=qty_d * unit_d,
+                                    total_amount=qty_d * parsed_unit,
                                     quantity=qty_d,
-                                    unit_price=unit_d,
+                                    unit_price=parsed_unit,
                                 )
                             else:
                                 TransactionService(session).register(
                                     asset_id=asset_id,
                                     transaction_type=TransactionType.INITIAL_BALANCE,
                                     tx_date=na_bal_date,
-                                    total_amount=Decimal(str(na_bal_total)),
+                                    total_amount=parsed_total,
                                 )
                     st.session_state[SUCCESS_MSG] = f"Ativo {ticker_clean} criado com sucesso!"
                     st.session_state[SETTINGS_ASSET_STEP] = None
