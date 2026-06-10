@@ -24,12 +24,13 @@ if not st.session_state.get(SNAPSHOT_DONE):
     st.session_state[SNAPSHOT_DONE] = True
 
 pages = st.navigation([
-    st.Page("ui/pages/dashboard.py",     title="Dashboard",     icon="📊", default=True),
-    st.Page("ui/pages/portfolio.py",     title="Carteira",      icon="💼"),
-    st.Page("ui/pages/transactions.py",  title="Transações",    icon="💸"),
-    st.Page("ui/pages/import_page.py",   title="Importar",      icon="⬆️"),
-    st.Page("ui/pages/goals.py",         title="Metas",         icon="🎯"),
-    st.Page("ui/pages/history.py",       title="Histórico",     icon="📈"),
-    st.Page("ui/pages/settings.py",      title="Configurações", icon="⚙️"),
+    st.Page("ui/pages/dashboard.py",          title="Dashboard",          icon="📊", default=True),
+    st.Page("ui/pages/portfolio.py",          title="Carteira",           icon="💼"),
+    st.Page("ui/pages/value_only_update.py",  title="Atualizar Posições", icon="🔄"),
+    st.Page("ui/pages/transactions.py",       title="Transações",         icon="💸"),
+    st.Page("ui/pages/import_page.py",        title="Importar",           icon="⬆️"),
+    st.Page("ui/pages/goals.py",              title="Metas",              icon="🎯"),
+    st.Page("ui/pages/history.py",            title="Histórico",          icon="📈"),
+    st.Page("ui/pages/settings.py",           title="Configurações",      icon="⚙️"),
 ])
 pages.run()

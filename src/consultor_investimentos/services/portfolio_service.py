@@ -87,6 +87,32 @@ class PortfolioService:
         """Atualiza (ou registra) o preço/valor de um ativo na data informada."""
         self._holding_repo.upsert(asset_id=asset_id, price_date=price_date, price=price)
 
+    def get_value_only_assets_for_update(self) -> list[dict]:
+        """Retorna ativos VALUE_ONLY ativos com último preço registrado."""
+        assets = self._asset_repo.get_active()
+        result = []
+        for asset in assets:
+            if asset.tracking_type != AssetTrackingType.VALUE_ONLY.value:
+                continue
+            latest = self._holding_repo.get_latest(asset.id)
+            result.append({
+                "id": asset.id,
+                "ticker": asset.ticker,
+                "name": asset.name,
+                "asset_class": asset.asset_class,
+                "last_price": latest.price if latest else None,
+                "last_date": latest.price_date if latest else None,
+            })
+        return result
+
+    def bulk_update_prices(self, updates: list[tuple[int, date, Decimal]]) -> int:
+        """Atualiza preços em batch. Retorna quantidade de registros salvos."""
+        count = 0
+        for asset_id, price_date, price in updates:
+            self._holding_repo.upsert(asset_id=asset_id, price_date=price_date, price=price)
+            count += 1
+        return count
+
     @staticmethod
     def get_allocation_by_class(
         positions: list[Position],
