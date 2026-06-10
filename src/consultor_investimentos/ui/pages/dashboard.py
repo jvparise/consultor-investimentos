@@ -6,6 +6,8 @@
 """
 import streamlit as st
 
+from decimal import Decimal
+
 from consultor_investimentos.config import AssetClass, ProjectionScenario
 from consultor_investimentos.database.connection import get_db
 from consultor_investimentos.services.goal_service import GoalService
@@ -169,6 +171,8 @@ else:
         AssetClass.OTHER: settings.target_other_pct,
     }
     actual_map = {a.asset_class: a.percentage for a in summary.allocation}
+    cash_pct = actual_map.pop(AssetClass.CASH, Decimal("0"))
+    actual_map[AssetClass.FIXED_INCOME] = actual_map.get(AssetClass.FIXED_INCOME, Decimal("0")) + cash_pct
 
     gaps = [
         (cls, float(target_map[cls] - actual_map.get(cls, 0)))
