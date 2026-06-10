@@ -131,12 +131,12 @@ col_left, col_right = st.columns([1, 2])
 
 with col_left:
     st.subheader("Alocação Atual")
-    st.plotly_chart(allocation_donut(summary.allocation), use_container_width=True)
+    st.plotly_chart(allocation_donut(summary.allocation), width="stretch")
 
 with col_right:
     st.subheader("Evolução Patrimonial")
     if len(history) >= 2:
-        st.plotly_chart(patrimony_area(history), use_container_width=True)
+        st.plotly_chart(patrimony_area(history), width="stretch")
     else:
         st.info(
             "O gráfico de evolução aparecerá após o sistema registrar "
@@ -189,10 +189,10 @@ else:
             )
             st.caption("Alocação completa →")
         with col_chart:
-            st.plotly_chart(allocation_gap_bars(summary.allocation, settings), use_container_width=True)
+            st.plotly_chart(allocation_gap_bars(summary.allocation, settings), width="stretch")
     else:
         st.success("✅ Alocação alinhada com a estratégia definida. Continue aportando proporcionalmente.")
-        st.plotly_chart(allocation_gap_bars(summary.allocation, settings), use_container_width=True)
+        st.plotly_chart(allocation_gap_bars(summary.allocation, settings), width="stretch")
 
 st.markdown("---")
 
@@ -254,7 +254,7 @@ if projection_goal and projection_goal.projections:
             target_value=projection_goal.goal_target_value,
             target_label=projection_goal.goal_name,
         ),
-        use_container_width=True,
+        width="stretch",
     )
 elif fire.monthly_expenses > 0 and not fire.is_achieved:
     st.plotly_chart(
@@ -263,7 +263,7 @@ elif fire.monthly_expenses > 0 and not fire.is_achieved:
             target_value=fire.fire_number,
             target_label="FIRE",
         ),
-        use_container_width=True,
+        width="stretch",
     )
 else:
     st.success("🎉 Todas as metas e o FIRE foram atingidos!")

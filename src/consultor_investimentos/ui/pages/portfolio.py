@@ -74,7 +74,7 @@ if summary.allocation:
     col_chart, col_table = st.columns([1, 2])
     with col_chart:
         st.subheader("Alocação por Classe")
-        st.plotly_chart(allocation_donut(summary.allocation), use_container_width=True)
+        st.plotly_chart(allocation_donut(summary.allocation), width="stretch")
 
     with col_table:
         st.subheader("Distribuição")

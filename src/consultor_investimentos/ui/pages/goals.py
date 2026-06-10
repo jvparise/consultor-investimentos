@@ -341,7 +341,7 @@ else:
                 target_value=chart_target,
                 target_label=chart_label,
             ),
-            use_container_width=True,
+            width="stretch",
         )
 
     # ── Premissas ──────────────────────────────────────────────────────────
