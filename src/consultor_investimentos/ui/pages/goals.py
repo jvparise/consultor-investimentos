@@ -11,7 +11,7 @@ from consultor_investimentos.services.portfolio_service import PortfolioService
 from consultor_investimentos.services.projection_service import ProjectionService
 from consultor_investimentos.services.settings_service import SettingsService
 from consultor_investimentos.ui.components.charts import projection_lines
-from consultor_investimentos.ui.components.metrics import fmt_brl, fmt_date_br, fmt_months, fmt_pct
+from consultor_investimentos.ui.components.metrics import fmt_brl, fmt_brl_private, fmt_date_br, fmt_months, fmt_pct
 from consultor_investimentos.utils.brl import fmt_brl_input, parse_brl
 from consultor_investimentos.ui.state import (
     CONFIRM_DEACTIVATE_GOAL_ID,
@@ -55,15 +55,15 @@ if settings.monthly_expenses > 0:
     with st.container(border=True):
         st.markdown(f"#### {fire_icon} Independência Financeira (FIRE)")
         st.caption(
-            f"Gastos mensais: {fmt_brl(settings.monthly_expenses)} × 300 = "
-            f"**{fmt_brl(fire.fire_number)}** necessário"
+            f"Gastos mensais: {fmt_brl_private(settings.monthly_expenses)} × 300 = "
+            f"**{fmt_brl_private(fire.fire_number)}** necessário"
         )
 
         pct = min(float(fire.pct_of_fire), 100.0)
         bar_text = (
             "✅ FIRE atingido! Parabéns!"
             if fire.is_achieved
-            else f"{pct:.1f}% — faltam {fmt_brl(fire.fire_number - fire.current_value)}"
+            else f"{pct:.1f}% — faltam {fmt_brl_private(fire.fire_number - fire.current_value)}"
         )
         st.progress(pct / 100, text=bar_text)
 
@@ -158,8 +158,8 @@ else:
             pct = float(goal.pct_complete)
             bar_text = (
                 f"{pct:.1f}% — "
-                f"{fmt_brl(goal.current_value)} / {fmt_brl(goal.goal_target_value)} · "
-                f"faltam {fmt_brl(goal.remaining_value)}"
+                f"{fmt_brl_private(goal.current_value)} / {fmt_brl_private(goal.goal_target_value)} · "
+                f"faltam {fmt_brl_private(goal.remaining_value)}"
             )
             st.progress(pct / 100, text=bar_text)
 
@@ -290,7 +290,7 @@ if achieved_goals:
     st.subheader("🏆 Metas Atingidas")
     for goal in achieved_goals:
         with st.container(border=True):
-            st.markdown(f"✅ **{goal.goal_name}** — {fmt_brl(goal.goal_target_value)}")
+            st.markdown(f"✅ **{goal.goal_name}** — {fmt_brl_private(goal.goal_target_value)}")
             st.progress(1.0, text="100% — Meta atingida!")
             a1, a2, _ = st.columns([1, 1, 5])
             if a1.button("🗑️ Desativar", key=f"deact_ach_{goal.goal_id}"):
@@ -327,13 +327,13 @@ else:
         chart_target   = goal.goal_target_value
         chart_label    = goal.goal_name
         current_val    = goal.current_value
-        target_val_str = fmt_brl(goal.goal_target_value)
+        target_val_str = fmt_brl_private(goal.goal_target_value)
     else:
         chart_results  = fire.fire_projections
         chart_target   = fire.fire_number
         chart_label    = "FIRE"
         current_val    = fire.current_value
-        target_val_str = fmt_brl(fire.fire_number)
+        target_val_str = fmt_brl_private(fire.fire_number)
 
     if chart_results:
         st.plotly_chart(
@@ -350,8 +350,8 @@ else:
         st.markdown(
             f"| Premissa | Valor |\n"
             f"|---|---|\n"
-            f"| Patrimônio atual | {fmt_brl(current_val)} |\n"
-            f"| Aporte mensal | {fmt_brl(settings.monthly_contribution)} |\n"
+            f"| Patrimônio atual | {fmt_brl_private(current_val)} |\n"
+            f"| Aporte mensal | {fmt_brl_private(settings.monthly_contribution)} |\n"
             f"| Alvo | {target_val_str} |\n"
             f"| Conservador | {SCENARIO_LABELS[ProjectionScenario.CONSERVATIVE]} |\n"
             f"| Moderado | {SCENARIO_LABELS[ProjectionScenario.MODERATE]} |\n"
@@ -371,7 +371,7 @@ else:
 
     if settings.monthly_expenses > 0:
         st.caption(
-            f"🔥 **Número FIRE** = gastos mensais ({fmt_brl(settings.monthly_expenses)}) × 300 "
-            f"= {fmt_brl(fire.fire_number)}. "
+            f"🔥 **Número FIRE** = gastos mensais ({fmt_brl_private(settings.monthly_expenses)}) × 300 "
+            f"= {fmt_brl_private(fire.fire_number)}. "
             "Representa o patrimônio para viver de renda sem consumir o principal (regra dos 4%)."
         )

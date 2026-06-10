@@ -2,7 +2,7 @@ import streamlit as st
 
 from consultor_investimentos.database.connection import get_db, init_db
 from consultor_investimentos.services.snapshot_service import SnapshotService
-from consultor_investimentos.ui.state import SNAPSHOT_DONE
+from consultor_investimentos.ui.state import PRIVACY_MODE, SNAPSHOT_DONE
 
 # Garante que todas as tabelas existam (idempotente — não afeta tabelas existentes)
 init_db()
@@ -22,6 +22,8 @@ if not st.session_state.get(SNAPSHOT_DONE):
     except Exception:
         pass  # Snapshot falhou silenciosamente — não bloqueia o app
     st.session_state[SNAPSHOT_DONE] = True
+
+st.sidebar.toggle("🔒 Modo Privacidade", key=PRIVACY_MODE)
 
 pages = st.navigation([
     st.Page("ui/pages/dashboard.py",          title="Dashboard",          icon="📊", default=True),

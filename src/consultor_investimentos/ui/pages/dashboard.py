@@ -23,6 +23,7 @@ from consultor_investimentos.ui.components.charts import (
 )
 from consultor_investimentos.ui.components.metrics import (
     fmt_brl,
+    fmt_brl_private,
     fmt_months,
     fmt_pct,
 )
@@ -77,8 +78,8 @@ col1, col2, col3, col4 = st.columns(4)
 with col1:
     st.metric(
         label="💰 Patrimônio Total",
-        value=fmt_brl(summary.total_value),
-        delta=f"{fmt_brl(summary.absolute_return, show_sign=True)} ({fmt_pct(summary.pct_return)})",
+        value=fmt_brl_private(summary.total_value),
+        delta=f"{fmt_brl_private(summary.absolute_return, show_sign=True)} ({fmt_pct(summary.pct_return)})",
         delta_color="normal" if summary.absolute_return >= 0 else "inverse",
     )
 
@@ -105,7 +106,7 @@ with col3:
         on_track_icon = "✅" if next_goal.on_track else "⚠️"
         st.metric(
             label=f"🎯 Próxima Meta {on_track_icon}",
-            value=fmt_brl(next_goal.goal_target_value),
+            value=fmt_brl_private(next_goal.goal_target_value),
             delta=f"{float(next_goal.pct_complete):.0f}% · {months_str}",
             delta_color="off",
         )
@@ -119,8 +120,8 @@ with col4:
     if aporte > 0:
         st.metric(
             label="📥 Aporte Mensal",
-            value=fmt_brl(aporte),
-            delta=f"Gastos: {fmt_brl(settings.monthly_expenses)}/mês",
+            value=fmt_brl_private(aporte),
+            delta=f"Gastos: {fmt_brl_private(settings.monthly_expenses)}/mês",
             delta_color="off",
         )
     else:
@@ -189,7 +190,7 @@ else:
             st.info(
                 f"**{most_underweight_class.value}** está **{gap_pct:.1f}%** abaixo do alvo.\n\n"
                 f"Considere direcionar seu próximo aporte de "
-                f"**{fmt_brl(settings.monthly_contribution)}** para esta classe."
+                f"**{fmt_brl_private(settings.monthly_contribution)}** para esta classe."
             )
             st.caption("Alocação completa →")
         with col_chart:
@@ -213,11 +214,11 @@ else:
             with fire_col1:
                 st.markdown(f"**🔥 FIRE — Independência Financeira**")
                 st.caption(
-                    f"Patrimônio alvo: {fmt_brl(fire.fire_number)} "
-                    f"(gastos {fmt_brl(settings.monthly_expenses)}/mês × 300)"
+                    f"Patrimônio alvo: {fmt_brl_private(fire.fire_number)} "
+                    f"(gastos {fmt_brl_private(settings.monthly_expenses)}/mês × 300)"
                 )
                 pct_val = min(float(fire.pct_of_fire), 100.0)
-                st.progress(pct_val / 100, text=f"{pct_val:.1f}% · Faltam {fmt_brl(fire.fire_number - fire.current_value)}")
+                st.progress(pct_val / 100, text=f"{pct_val:.1f}% · Faltam {fmt_brl_private(fire.fire_number - fire.current_value)}")
             with fire_col2:
                 fire_moderate = fire.months_to_fire.get(ProjectionScenario.MODERATE)
                 st.metric("Moderado", fmt_months(fire_moderate))
@@ -231,11 +232,11 @@ else:
                 achieved_badge = " ✓" if goal.is_achieved else ""
                 st.markdown(f"**{on_track_icon} {goal.goal_name}{achieved_badge}**")
                 if goal.goal_target_date:
-                    st.caption(f"Prazo: {goal.goal_target_date.strftime('%d/%m/%Y')} · Alvo: {fmt_brl(goal.goal_target_value)}")
+                    st.caption(f"Prazo: {goal.goal_target_date.strftime('%d/%m/%Y')} · Alvo: {fmt_brl_private(goal.goal_target_value)}")
                 else:
-                    st.caption(f"Sem prazo definido · Alvo: {fmt_brl(goal.goal_target_value)}")
+                    st.caption(f"Sem prazo definido · Alvo: {fmt_brl_private(goal.goal_target_value)}")
                 pct = min(float(goal.pct_complete), 100.0)
-                bar_text = f"{pct:.1f}% · Faltam {fmt_brl(goal.remaining_value)}" if not goal.is_achieved else "Meta atingida!"
+                bar_text = f"{pct:.1f}% · Faltam {fmt_brl_private(goal.remaining_value)}" if not goal.is_achieved else "Meta atingida!"
                 st.progress(pct / 100, text=bar_text)
             with g_col2:
                 moderate = goal.projections.get(ProjectionScenario.MODERATE)

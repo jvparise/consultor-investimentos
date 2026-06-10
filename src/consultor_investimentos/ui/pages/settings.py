@@ -9,7 +9,7 @@ from consultor_investimentos.database.connection import get_db
 from consultor_investimentos.services.portfolio_service import PortfolioService
 from consultor_investimentos.services.settings_service import SettingsService
 from consultor_investimentos.services.transaction_service import TransactionService
-from consultor_investimentos.ui.components.metrics import fmt_brl
+from consultor_investimentos.ui.components.metrics import fmt_brl, fmt_brl_private
 from consultor_investimentos.utils.brl import fmt_brl_input, parse_brl
 from consultor_investimentos.ui.state import (
     CONFIRM_DEACTIVATE_ASSET_ID,
@@ -92,7 +92,7 @@ with st.form("form_financial"):
 
 if settings.monthly_expenses > 0:
     fire_number = settings.monthly_expenses * 300
-    st.caption(f"🔥 Meta FIRE estimada: {fmt_brl(fire_number)} (R$ {fmt_brl(settings.monthly_expenses)}/mês × 300)")
+    st.caption(f"🔥 Meta FIRE estimada: {fmt_brl_private(fire_number)} (R$ {fmt_brl_private(settings.monthly_expenses)}/mês × 300)")
 
 st.markdown("---")
 
@@ -214,7 +214,7 @@ if st.session_state.get(SETTINGS_ASSET_STEP) == "open":
                     unit_val = Decimal("0")
                 if na_bal_qty > 0 and unit_val > 0:
                     total_calc = Decimal(str(na_bal_qty)) * unit_val
-                    st.caption(f"Total calculado: **{fmt_brl(total_calc)}**")
+                    st.caption(f"Total calculado: **{fmt_brl_private(total_calc)}**")
             else:
                 na_bal_total = st.text_input(
                     "Valor total da posição (R$)", placeholder="ex: 10.000,00", key="na_total"

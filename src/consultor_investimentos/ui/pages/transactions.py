@@ -13,7 +13,7 @@ from consultor_investimentos.database.connection import get_db
 from consultor_investimentos.services.portfolio_service import PortfolioService
 from consultor_investimentos.services.snapshot_service import SnapshotService
 from consultor_investimentos.services.transaction_service import TransactionService
-from consultor_investimentos.ui.components.metrics import fmt_brl, fmt_date_br, fmt_price, fmt_qty
+from consultor_investimentos.ui.components.metrics import fmt_brl, fmt_brl_private, fmt_date_br, fmt_price, fmt_qty
 from consultor_investimentos.utils.brl import parse_brl
 from consultor_investimentos.ui.state import (
     CONFIRM_DELETE_TX_ID,
@@ -145,7 +145,7 @@ if is_buy_sell:
 
     if qty_val > 0 and price_val > 0:
         total_val = (qty_val * price_val).quantize(Decimal("0.01"))
-        st.metric("Total calculado", fmt_brl(total_val))
+        st.metric("Total calculado", fmt_brl_private(total_val))
     else:
         st.caption("Preencha quantidade e preço para ver o total.")
         total_val = Decimal("0")
@@ -239,9 +239,9 @@ if st.button("✅ Registrar", type="primary", key=f"tx_submit_{selected_id}"):
 
             ticker = selected_asset["ticker"]
             if is_buy_sell:
-                detail = f"{fmt_qty(qty_val)} cotas a {fmt_price(price_val)} = {fmt_brl(total_val)}"
+                detail = f"{fmt_qty(qty_val)} cotas a {fmt_price(price_val)} = {fmt_brl_private(total_val)}"
             else:
-                detail = fmt_brl(total_val)
+                detail = fmt_brl_private(total_val)
             st.session_state[SUCCESS_MSG] = (
                 f"{ticker}: {transaction_type.value} registrada — {detail}."
             )
@@ -278,7 +278,7 @@ for tx in history:
     if is_confirming:
         st.warning(
             f"⚠️ Excluir **{icon} {tx.transaction_type}** de {fmt_date_br(tx.date)} "
-            f"— {fmt_brl(tx.total_amount)}? Esta ação não pode ser desfeita."
+            f"— {fmt_brl_private(tx.total_amount)}? Esta ação não pode ser desfeita."
         )
         c1, c2 = st.columns([1, 5])
         with c1:
@@ -306,8 +306,8 @@ for tx in history:
     row[1].write(f"{icon} {tx.transaction_type}")
     row[2].write(fmt_qty(tx.quantity))
     row[3].write(fmt_price(tx.unit_price))
-    row[4].write(fmt_brl(tx.total_amount))
-    fees_str = fmt_brl(tx.fees) if tx.fees and tx.fees > 0 else "—"
+    row[4].write(fmt_brl_private(tx.total_amount))
+    fees_str = fmt_brl_private(tx.fees) if tx.fees and tx.fees > 0 else "—"
     row[5].write(fees_str)
 
     if not tx.can_delete:

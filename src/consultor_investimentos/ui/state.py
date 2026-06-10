@@ -3,6 +3,9 @@
 # Controle de ciclo de vida
 SNAPSHOT_DONE = "snapshot_done"
 
+# Modo privacidade — oculta valores monetários na UI
+PRIVACY_MODE = "privacy_mode"
+
 # Mensagens flash (exibidas uma vez após rerun)
 SUCCESS_MSG = "success_message"
 ERROR_MSG = "error_message"

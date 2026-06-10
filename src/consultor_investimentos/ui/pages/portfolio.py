@@ -12,6 +12,7 @@ from consultor_investimentos.ui.state import CONFIRM_REACTIVATE_ASSET_ID
 from consultor_investimentos.ui.components.charts import allocation_donut
 from consultor_investimentos.ui.components.metrics import (
     fmt_brl,
+    fmt_brl_private,
     fmt_date_br,
     fmt_price,
     fmt_pct,
@@ -54,12 +55,12 @@ col1, col2, col3 = st.columns(3)
 with col1:
     st.metric(
         label="💰 Patrimônio Investido",
-        value=fmt_brl(summary.total_value),
-        delta=f"{fmt_brl(summary.absolute_return, show_sign=True)} ({fmt_pct(summary.pct_return)})",
+        value=fmt_brl_private(summary.total_value),
+        delta=f"{fmt_brl_private(summary.absolute_return, show_sign=True)} ({fmt_pct(summary.pct_return)})",
         delta_color="normal" if summary.absolute_return >= 0 else "inverse",
     )
 with col2:
-    st.metric(label="📊 Custo Total", value=fmt_brl(summary.total_cost))
+    st.metric(label="📊 Custo Total", value=fmt_brl_private(summary.total_cost))
 with col3:
     st.metric(
         label="🏷️ Ativos",
@@ -82,7 +83,7 @@ if summary.allocation:
         for alloc in summary.allocation:
             st.markdown(
                 f"**{alloc.asset_class.value}** — "
-                f"{fmt_brl(alloc.total_value)} ({fmt_pct(alloc.percentage, show_sign=False)})"
+                f"{fmt_brl_private(alloc.total_value)} ({fmt_pct(alloc.percentage, show_sign=False)})"
             )
     st.markdown("---")
 
@@ -95,7 +96,7 @@ for pos in summary.positions:
     price_date_str = fmt_date_br(pos.price_date)
 
     with st.expander(
-        f"**{pos.ticker}** · {fmt_brl(pos.current_value)} "
+        f"**{pos.ticker}** · {fmt_brl_private(pos.current_value)} "
         f"· {return_color} {fmt_pct(pos.pct_return)}"
         f" · {fmt_pct(pos.portfolio_pct, show_sign=False)} da carteira",
         expanded=False,
@@ -116,8 +117,8 @@ for pos in summary.positions:
             st.metric("Preço Atual", fmt_price(pos.current_price))
             st.caption(f"Data: {price_date_str}")
         with d_col4:
-            st.metric("Custo Total", fmt_brl(pos.total_cost))
-            st.metric("Retorno", fmt_brl(pos.absolute_return, show_sign=True))
+            st.metric("Custo Total", fmt_brl_private(pos.total_cost))
+            st.metric("Retorno", fmt_brl_private(pos.absolute_return, show_sign=True))
 
         if pos.notes:
             st.caption(f"📝 {pos.notes}")
@@ -152,7 +153,7 @@ for pos in summary.positions:
                             price=new_price,
                         )
                     st.session_state[SUCCESS_MSG] = (
-                        f"{pos.ticker}: preço atualizado para {fmt_brl(new_price)} em {fmt_date_br(new_date)}."
+                        f"{pos.ticker}: preço atualizado para {fmt_brl_private(new_price)} em {fmt_date_br(new_date)}."
                     )
                     st.rerun()
                 except (ValueError, Exception) as e:
@@ -272,7 +273,7 @@ if summary.unpriced_tickers:
                             price=new_price,
                         )
                     st.session_state[SUCCESS_MSG] = (
-                        f"{ticker}: preço registrado ({fmt_brl(new_price)} em {fmt_date_br(new_date)})."
+                        f"{ticker}: preço registrado ({fmt_brl_private(new_price)} em {fmt_date_br(new_date)})."
                     )
                     st.rerun()
                 except (ValueError, Exception) as e:

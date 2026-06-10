@@ -6,7 +6,7 @@ import streamlit as st
 
 from consultor_investimentos.database.connection import get_db
 from consultor_investimentos.services.portfolio_service import PortfolioService
-from consultor_investimentos.ui.components.metrics import fmt_brl, fmt_date_br
+from consultor_investimentos.ui.components.metrics import fmt_brl, fmt_brl_private, fmt_date_br
 from consultor_investimentos.ui.state import ERROR_MSG, SUCCESS_MSG
 
 if msg := st.session_state.pop(SUCCESS_MSG, None):
@@ -36,7 +36,7 @@ inputs: dict[int, str] = {}
 for asset in assets:
     col_info, col_input = st.columns([3, 2])
     with col_info:
-        last_val = fmt_brl(asset["last_price"]) if asset["last_price"] else "—"
+        last_val = fmt_brl_private(asset["last_price"]) if asset["last_price"] else "—"
         last_dt = fmt_date_br(asset["last_date"]) if asset["last_date"] else "—"
         st.markdown(f"**{asset['ticker']}** — {asset['name']}")
         st.caption(f"{asset['asset_class']} · Último: {last_val} em {last_dt}")

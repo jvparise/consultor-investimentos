@@ -1,6 +1,12 @@
 """Formatadores de valores financeiros para exibição na UI."""
 from decimal import Decimal
 
+import streamlit as st
+
+from consultor_investimentos.ui.state import PRIVACY_MODE
+
+_HIDDEN = "R$ ••••••"
+
 
 def fmt_brl(value: Decimal | float | int, show_sign: bool = False) -> str:
     """Formata valor em reais: R$ 1.234,56 ou -R$ 1.234,56."""
@@ -47,8 +53,15 @@ def fmt_qty(value: Decimal | None) -> str:
     return s
 
 
+def fmt_brl_private(value: Decimal | float | int, show_sign: bool = False) -> str:
+    """fmt_brl com suporte a modo privacidade."""
+    if st.session_state.get(PRIVACY_MODE, False):
+        return _HIDDEN
+    return fmt_brl(value, show_sign=show_sign)
+
+
 def fmt_price(value: Decimal | None) -> str:
-    """None → '—', caso contrário fmt_brl."""
+    """None → '—', caso contrário fmt_brl_private."""
     if value is None:
         return "—"
-    return fmt_brl(value)
+    return fmt_brl_private(value)
