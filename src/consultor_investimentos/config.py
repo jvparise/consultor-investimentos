@@ -4,7 +4,9 @@ from enum import Enum
 
 class AssetClass(str, Enum):
     EQUITY = "Ações"
-    FII = "FIIs"
+    ETF = "ETF"
+    FII_BRICK = "FII Tijolo"
+    FII_PAPER = "FII Papel"
     FIXED_INCOME = "Renda Fixa"
     INTERNATIONAL = "Internacional"
     CRYPTO = "Cripto"
@@ -99,7 +101,9 @@ RENTABILITY_DISCLAIMER = (
 # Mapeamento de classe para cor nos gráficos
 ASSET_CLASS_COLORS: dict[AssetClass, str] = {
     AssetClass.EQUITY: "#2196F3",
-    AssetClass.FII: "#4CAF50",
+    AssetClass.ETF: "#00BCD4",
+    AssetClass.FII_BRICK: "#4CAF50",
+    AssetClass.FII_PAPER: "#8BC34A",
     AssetClass.FIXED_INCOME: "#FF9800",
     AssetClass.INTERNATIONAL: "#9C27B0",
     AssetClass.CRYPTO: "#F44336",

@@ -14,7 +14,9 @@ class SettingsDTO:
     risk_profile: str
     target_equity_pct: Decimal
     target_fixed_pct: Decimal
-    target_fii_pct: Decimal
+    target_etf_pct: Decimal
+    target_fii_brick_pct: Decimal
+    target_fii_paper_pct: Decimal
     target_intl_pct: Decimal
     target_crypto_pct: Decimal
     target_other_pct: Decimal

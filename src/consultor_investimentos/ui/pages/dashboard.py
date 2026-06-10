@@ -153,7 +153,9 @@ st.subheader("💡 Onde Investir o Próximo Aporte?")
 
 target_sum = sum([
     settings.target_equity_pct,
-    settings.target_fii_pct,
+    settings.target_etf_pct,
+    settings.target_fii_brick_pct,
+    settings.target_fii_paper_pct,
     settings.target_fixed_pct,
     settings.target_intl_pct,
     settings.target_crypto_pct,
@@ -165,7 +167,9 @@ if target_sum == 0:
 else:
     target_map = {
         AssetClass.EQUITY: settings.target_equity_pct,
-        AssetClass.FII: settings.target_fii_pct,
+        AssetClass.ETF: settings.target_etf_pct,
+        AssetClass.FII_BRICK: settings.target_fii_brick_pct,
+        AssetClass.FII_PAPER: settings.target_fii_paper_pct,
         AssetClass.FIXED_INCOME: settings.target_fixed_pct,
         AssetClass.INTERNATIONAL: settings.target_intl_pct,
         AssetClass.CRYPTO: settings.target_crypto_pct,

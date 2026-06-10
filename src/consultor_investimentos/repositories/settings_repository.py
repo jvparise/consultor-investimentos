@@ -7,7 +7,9 @@ from consultor_investimentos.database.models import UserSettings
 _PCT_FIELDS = [
     "target_equity_pct",
     "target_fixed_pct",
-    "target_fii_pct",
+    "target_etf_pct",
+    "target_fii_brick_pct",
+    "target_fii_paper_pct",
     "target_intl_pct",
     "target_crypto_pct",
     "target_other_pct",

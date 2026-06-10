@@ -52,7 +52,7 @@ def test_update_percentuais_validos_somando_100(session: Session) -> None:
     updated = repo.update({
         "target_equity_pct": Decimal("40"),
         "target_fixed_pct": Decimal("30"),
-        "target_fii_pct": Decimal("20"),
+        "target_fii_brick_pct": Decimal("20"),
         "target_intl_pct": Decimal("5"),
         "target_crypto_pct": Decimal("0"),
         "target_other_pct": Decimal("5"),
@@ -68,7 +68,7 @@ def test_update_percentuais_zerados_aceito(session: Session) -> None:
     updated = repo.update({
         "target_equity_pct": Decimal("0"),
         "target_fixed_pct": Decimal("0"),
-        "target_fii_pct": Decimal("0"),
+        "target_fii_brick_pct": Decimal("0"),
         "target_intl_pct": Decimal("0"),
         "target_crypto_pct": Decimal("0"),
         "target_other_pct": Decimal("0"),
