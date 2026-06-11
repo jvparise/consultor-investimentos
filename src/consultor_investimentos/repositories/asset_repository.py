@@ -1,7 +1,7 @@
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from consultor_investimentos.config import AssetClass, AssetTrackingType, IncomeType
+from consultor_investimentos.config import AssetClass, AssetTrackingType, Currency, IncomeType
 from consultor_investimentos.database.models import Asset
 
 
@@ -49,6 +49,7 @@ class AssetRepository:
         asset_class: AssetClass,
         income_type: IncomeType,
         tracking_type: AssetTrackingType,
+        currency: Currency = Currency.BRL,
         notes: str | None = None,
     ) -> Asset:
         ticker = ticker.upper().strip()
@@ -66,6 +67,7 @@ class AssetRepository:
             asset_class=asset_class.value,
             income_type=income_type.value,
             tracking_type=tracking_type.value,
+            currency=currency.value,
             notes=notes,
         )
         self._session.add(asset)
@@ -78,6 +80,7 @@ class AssetRepository:
         name: str | None = None,
         notes: str | None = None,
         asset_class: AssetClass | None = None,
+        currency: Currency | None = None,
     ) -> Asset:
         asset = self.get_by_id(id)
         if asset is None:
@@ -89,6 +92,8 @@ class AssetRepository:
             asset.notes = notes
         if asset_class is not None:
             asset.asset_class = asset_class.value
+        if currency is not None:
+            asset.currency = currency.value
 
         self._session.flush()
         return asset

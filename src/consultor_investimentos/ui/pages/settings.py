@@ -4,7 +4,8 @@ from decimal import Decimal
 
 import streamlit as st
 
-from consultor_investimentos.config import AssetClass, AssetTrackingType, TransactionType
+from consultor_investimentos.config import AssetClass, AssetTrackingType, Currency, TransactionType
+from consultor_investimentos.services.exchange_rate_service import ExchangeRateService
 from consultor_investimentos.database.connection import get_db
 from consultor_investimentos.services.portfolio_service import PortfolioService
 from consultor_investimentos.services.settings_service import SettingsService
@@ -33,6 +34,7 @@ with get_db() as session:
     settings = _svc.get_settings()
     assets = _svc.get_active_assets()
     unpriced = set(PortfolioService(session).get_portfolio_summary().unpriced_tickers)
+    fx_rates = ExchangeRateService(session).get_all_rates()
 
 st.title("⚙️ Configurações")
 st.markdown("---")
@@ -151,6 +153,64 @@ if st.button("💾 Salvar Alocação", key="btn_alloc"):
 
 st.markdown("---")
 
+# ── Seção: Cotações de Câmbio ─────────────────────────────────────────────────
+st.subheader("💱 Cotações de Câmbio")
+st.caption("Defina as cotações usadas para converter ativos em moeda estrangeira para BRL.")
+
+with st.form("form_fx_rates"):
+    col_usd, col_eur = st.columns(2)
+    with col_usd:
+        usd_rate_input = st.text_input(
+            "USD → BRL",
+            value=fmt_brl_input(fx_rates.get(Currency.USD)),
+            placeholder="ex: 5,70",
+            help="1 dólar americano = ? reais",
+        )
+    with col_eur:
+        eur_rate_input = st.text_input(
+            "EUR → BRL",
+            value=fmt_brl_input(fx_rates.get(Currency.EUR)),
+            placeholder="ex: 6,20",
+            help="1 euro = ? reais",
+        )
+    if st.form_submit_button("💾 Salvar Cotações"):
+        errors_fx: list[str] = []
+        usd_val: Decimal | None = None
+        eur_val: Decimal | None = None
+        if usd_rate_input.strip():
+            try:
+                usd_val = parse_brl(usd_rate_input)
+                if usd_val <= 0:
+                    errors_fx.append("Cotação USD deve ser maior que zero.")
+            except ValueError:
+                errors_fx.append(f"Cotação USD inválida: '{usd_rate_input}'.")
+        if eur_rate_input.strip():
+            try:
+                eur_val = parse_brl(eur_rate_input)
+                if eur_val <= 0:
+                    errors_fx.append("Cotação EUR deve ser maior que zero.")
+            except ValueError:
+                errors_fx.append(f"Cotação EUR inválida: '{eur_rate_input}'.")
+        if errors_fx:
+            for err in errors_fx:
+                st.error(err)
+        elif usd_val is None and eur_val is None:
+            st.warning("Informe ao menos uma cotação.")
+        else:
+            try:
+                with get_db() as session:
+                    svc_fx = ExchangeRateService(session)
+                    if usd_val is not None:
+                        svc_fx.set_rate(Currency.USD, usd_val)
+                    if eur_val is not None:
+                        svc_fx.set_rate(Currency.EUR, eur_val)
+                st.session_state[SUCCESS_MSG] = "Cotações atualizadas."
+                st.rerun()
+            except Exception as e:
+                st.error(str(e))
+
+st.markdown("---")
+
 # ── Seção: Ativos Cadastrados ──────────────────────────────────────────────────
 st.subheader("📋 Ativos Cadastrados")
 
@@ -197,6 +257,14 @@ if st.session_state.get(SETTINGS_ASSET_STEP) == "open":
                 else AssetTrackingType.VALUE_ONLY
             )
 
+        na_currency_val = st.selectbox(
+            "Moeda",
+            options=[c.value for c in Currency],
+            key="na_currency",
+            help="BRL para ativos nacionais; USD/EUR para internacionais.",
+        )
+        na_currency = Currency(na_currency_val)
+
         na_notes = st.text_area("Observações", max_chars=200, key="na_notes", placeholder="(opcional)")
 
         st.markdown("---")
@@ -207,24 +275,39 @@ if st.session_state.get(SETTINGS_ASSET_STEP) == "open":
         na_bal_unit: float = 0.0
         na_bal_total: float = 0.0
 
+        na_fx_rate: Decimal = Decimal("1")
         if with_balance:
             na_bal_date = st.date_input("Data do saldo", value=date.today(), key="na_bal_date")
+            if na_currency != Currency.BRL:
+                fx_placeholder = "5,70" if na_currency == Currency.USD else "6,20"
+                fx_label = f"Cotação {na_currency.value}/BRL na data"
+                fx_input = st.text_input(fx_label, placeholder=f"ex: {fx_placeholder}", key="na_fx_rate")
+                try:
+                    na_fx_rate = parse_brl(fx_input) if fx_input.strip() else Decimal("1")
+                except ValueError:
+                    na_fx_rate = Decimal("1")
+
+            curr_sym = na_currency.value
             if na_tracking == AssetTrackingType.QUANTITY_PRICE:
                 c1, c2 = st.columns(2)
                 with c1:
                     na_bal_qty = st.number_input("Quantidade", min_value=0.0, step=1.0, format="%.6f", key="na_qty")
                 with c2:
-                    na_bal_unit = st.text_input("Preço unitário (R$)", placeholder="ex: 62,50", key="na_unit")
+                    na_bal_unit = st.text_input(f"Preço unitário ({curr_sym})", placeholder="ex: 62,50", key="na_unit")
                 try:
                     unit_val = parse_brl(na_bal_unit) if na_bal_unit.strip() else Decimal("0")
                 except ValueError:
                     unit_val = Decimal("0")
                 if na_bal_qty > 0 and unit_val > 0:
-                    total_calc = Decimal(str(na_bal_qty)) * unit_val
-                    st.caption(f"Total calculado: **{fmt_brl_private(total_calc)}**")
+                    total_native = Decimal(str(na_bal_qty)) * unit_val
+                    total_brl = (total_native * na_fx_rate).quantize(Decimal("0.01"))
+                    if na_currency == Currency.BRL:
+                        st.caption(f"Total: **{fmt_brl_private(total_brl)}**")
+                    else:
+                        st.caption(f"Total: {na_currency.value} {float(total_native):,.2f} = **{fmt_brl_private(total_brl)}**")
             else:
                 na_bal_total = st.text_input(
-                    "Valor total da posição (R$)", placeholder="ex: 10.000,00", key="na_total"
+                    f"Valor total da posição ({curr_sym})", placeholder="ex: 10.000,00", key="na_total"
                 )
 
         c_save, c_cancel = st.columns(2)
@@ -278,25 +361,32 @@ if st.session_state.get(SETTINGS_ASSET_STEP) == "open":
                             name=name_clean,
                             asset_class=na_class,
                             tracking_type=na_tracking,
+                            currency=na_currency,
                             notes=na_notes.strip() or None,
                         )
                         if with_balance and na_bal_date:
                             if na_tracking == AssetTrackingType.QUANTITY_PRICE:
                                 qty_d = Decimal(str(na_bal_qty))
+                                # unit_price em moeda nativa → asset_prices
+                                # total_amount em BRL → custo de aquisição
+                                total_brl = (qty_d * parsed_unit * na_fx_rate).quantize(Decimal("0.01"))
                                 TransactionService(session).register(
                                     asset_id=asset_id,
                                     transaction_type=TransactionType.INITIAL_BALANCE,
                                     tx_date=na_bal_date,
-                                    total_amount=qty_d * parsed_unit,
+                                    total_amount=total_brl,
                                     quantity=qty_d,
                                     unit_price=parsed_unit,
                                 )
                             else:
+                                # parsed_total em moeda nativa
+                                total_brl = (parsed_total * na_fx_rate).quantize(Decimal("0.01"))
                                 TransactionService(session).register(
                                     asset_id=asset_id,
                                     transaction_type=TransactionType.INITIAL_BALANCE,
                                     tx_date=na_bal_date,
-                                    total_amount=parsed_total,
+                                    total_amount=total_brl,
+                                    new_position_value=parsed_total,
                                 )
                     st.session_state[SUCCESS_MSG] = f"Ativo {ticker_clean} criado com sucesso!"
                     st.session_state[SETTINGS_ASSET_STEP] = None
@@ -376,8 +466,12 @@ else:
                     new_notes = st.text_area("Observações", value=asset["notes"], max_chars=200)
                     current_class = asset["asset_class"]
                     all_classes = [cls.value for cls in AssetClass]
-                    default_idx = all_classes.index(current_class) if current_class in all_classes else 0
-                    new_class_val = st.selectbox("Classe", options=all_classes, index=default_idx)
+                    default_class_idx = all_classes.index(current_class) if current_class in all_classes else 0
+                    new_class_val = st.selectbox("Classe", options=all_classes, index=default_class_idx)
+                    current_currency = asset.get("currency", Currency.BRL.value)
+                    all_currencies = [c.value for c in Currency]
+                    default_curr_idx = all_currencies.index(current_currency) if current_currency in all_currencies else 0
+                    new_currency_val = st.selectbox("Moeda", options=all_currencies, index=default_curr_idx)
                     if is_unpriced:
                         st.warning("Ativo sem preço registrado. Atualize o preço em **Carteira**.")
                     if st.form_submit_button("💾 Salvar", type="primary"):
@@ -386,12 +480,14 @@ else:
                         else:
                             try:
                                 new_class = AssetClass(new_class_val) if new_class_val != current_class else None
+                                new_currency = Currency(new_currency_val) if new_currency_val != current_currency else None
                                 with get_db() as session:
                                     SettingsService(session).update_asset(
                                         asset_id=asset_id,
                                         name=new_name.strip(),
                                         notes=new_notes.strip(),
                                         asset_class=new_class,
+                                        currency=new_currency,
                                     )
                                 st.session_state[SUCCESS_MSG] = f"{ticker} atualizado."
                                 st.session_state[EDIT_ASSET_ID] = None

@@ -3,7 +3,44 @@ from datetime import date
 from decimal import Decimal
 from typing import Literal
 
-from consultor_investimentos.config import AssetClass, ProjectionScenario, TransactionType
+from consultor_investimentos.config import AssetClass, Currency, ProjectionScenario, TransactionType
+
+
+@dataclass
+class PerformanceRowDTO:
+    asset_id: int
+    ticker: str
+    asset_name: str
+    asset_class: AssetClass
+    currency: Currency
+    previous_price: Decimal | None       # em BRL
+    current_price: Decimal | None        # em BRL
+    previous_price_native: Decimal | None
+    current_price_native: Decimal | None
+    previous_price_date: date | None
+    current_price_date: date | None
+    appreciation: Decimal
+    income: Decimal
+    total_result: Decimal
+
+
+@dataclass
+class PerformanceClassSummaryDTO:
+    asset_class: AssetClass
+    rows: list["PerformanceRowDTO"]
+    total_appreciation: Decimal
+    total_income: Decimal
+    total_result: Decimal
+
+
+@dataclass
+class PerformanceReportDTO:
+    year: int
+    month: int
+    classes: list["PerformanceClassSummaryDTO"]
+    total_appreciation: Decimal
+    total_income: Decimal
+    total_result: Decimal
 
 
 @dataclass
@@ -44,9 +81,11 @@ class Position:
     name: str
     asset_class: AssetClass
     tracking_type: str
+    currency: Currency
     quantity: Decimal | None
     average_price: Decimal | None
     current_price: Decimal
+    current_price_brl: Decimal
     current_value: Decimal
     total_cost: Decimal
     absolute_return: Decimal

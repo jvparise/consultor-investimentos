@@ -63,19 +63,35 @@ def patrimony_area(history: list[SnapshotPoint]) -> go.Figure:
     dates = [h.snapshot_date for h in history]
     values = [float(h.total_value) for h in history]
 
+    span_days = (dates[-1] - dates[0]).days if len(dates) >= 2 else 0
+    if span_days <= 60:
+        tick_fmt = "%d/%b"
+    elif span_days <= 365:
+        tick_fmt = "%d/%b/%y"
+    else:
+        tick_fmt = "%b/%y"
+
+    # Limita a 8 ticks distribuídos uniformemente entre os pontos reais
+    step = max(1, len(dates) // 8)
+    tick_dates = dates[::step]
+    if dates[-1] not in tick_dates:
+        tick_dates = tick_dates + [dates[-1]]
+    tick_texts = [d.strftime(tick_fmt) for d in tick_dates]
+
     fig = go.Figure(go.Scatter(
         x=dates,
         y=values,
         fill="tozeroy",
         fillcolor="rgba(33,150,243,0.15)",
         line=dict(color="#2196F3", width=2),
-        mode="lines",
+        mode="lines+markers",
+        marker=dict(size=5, color="#2196F3"),
         hovertemplate="<b>%{x|%d/%m/%Y}</b><br>R$ %{y:,.2f}<extra></extra>",
     ))
     fig.update_layout(
         **_LAYOUT_DEFAULTS,
         height=260,
-        xaxis=dict(showgrid=False, tickformat="%b/%y"),
+        xaxis=dict(showgrid=False, tickvals=tick_dates, ticktext=tick_texts),
         yaxis=dict(tickprefix="R$ ", tickformat=",.0f", gridcolor="rgba(0,0,0,0.06)"),
     )
     return fig

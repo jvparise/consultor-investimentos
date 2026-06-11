@@ -2,6 +2,12 @@ from decimal import Decimal
 from enum import Enum
 
 
+class Currency(str, Enum):
+    BRL = "BRL"
+    USD = "USD"
+    EUR = "EUR"
+
+
 class AssetClass(str, Enum):
     EQUITY = "Ações"
     ETF = "ETF"

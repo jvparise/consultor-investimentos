@@ -3,13 +3,15 @@ from decimal import Decimal
 
 from sqlalchemy.orm import Session
 
-from consultor_investimentos.config import AssetClass, AssetTrackingType, TransactionType
+from consultor_investimentos.config import AssetClass, AssetTrackingType, Currency, TransactionType
 from consultor_investimentos.repositories import (
     AssetRepository,
     ContributionRepository,
+    ExchangeRateRepository,
     HoldingRepository,
 )
 from consultor_investimentos.services.dto import AllocationData, PortfolioSummary, Position
+from consultor_investimentos.utils.currency import convert_to_brl
 
 
 class PortfolioService:
@@ -17,24 +19,33 @@ class PortfolioService:
         self._asset_repo = AssetRepository(session)
         self._contribution_repo = ContributionRepository(session)
         self._holding_repo = HoldingRepository(session)
+        self._fx_repo = ExchangeRateRepository(session)
+
+    def _get_rates(self) -> dict[Currency, Decimal]:
+        rates = self._fx_repo.get_rates()
+        rates[Currency.BRL] = Decimal("1")
+        return rates
 
     def get_all_positions(self) -> list[Position]:
         assets = self._asset_repo.get_active()
-        return [p for a in assets if (p := self._build_position(a)) is not None]
+        rates = self._get_rates()
+        return [p for a in assets if (p := self._build_position(a, rates)) is not None]
 
     def get_position(self, asset_id: int) -> Position | None:
         asset = self._asset_repo.get_by_id(asset_id)
         if asset is None or not asset.is_active:
             return None
-        return self._build_position(asset)
+        rates = self._get_rates()
+        return self._build_position(asset, rates)
 
     def get_portfolio_summary(self) -> PortfolioSummary:
         all_active = self._asset_repo.get_active()
+        rates = self._get_rates()
         positions: list[Position] = []
         unpriced_tickers: list[str] = []
 
         for asset in all_active:
-            position = self._build_position(asset)
+            position = self._build_position(asset, rates)
             if position is not None:
                 positions.append(position)
             else:
@@ -69,39 +80,44 @@ class PortfolioService:
         )
 
     def get_active_asset_options(self) -> list[dict]:
-        """Retorna lista mínima de ativos ativos para seletores de UI.
-
-        Cada dict contém apenas primitivos: id, ticker, name, tracking_type.
-        """
+        """Retorna lista mínima de ativos ativos para seletores de UI."""
         return [
             {
                 "id": a.id,
                 "ticker": a.ticker,
                 "name": a.name,
                 "tracking_type": a.tracking_type,
+                "asset_class": a.asset_class,
+                "currency": a.currency,
             }
             for a in self._asset_repo.get_active()
         ]
 
     def update_asset_price(self, asset_id: int, price_date: date, price: Decimal) -> None:
-        """Atualiza (ou registra) o preço/valor de um ativo na data informada."""
         self._holding_repo.upsert(asset_id=asset_id, price_date=price_date, price=price)
 
-    def get_value_only_assets_for_update(self) -> list[dict]:
-        """Retorna ativos VALUE_ONLY ativos com último preço registrado."""
+    def get_value_only_assets_for_update(self, period_start: date | None = None) -> list[dict]:
+        """Retorna ativos VALUE_ONLY ativos com último preço e base do período."""
+        today = date.today()
+        if period_start is None:
+            period_start = date(today.year, today.month, 1)
         assets = self._asset_repo.get_active()
         result = []
         for asset in assets:
             if asset.tracking_type != AssetTrackingType.VALUE_ONLY.value:
                 continue
             latest = self._holding_repo.get_latest(asset.id)
+            base = self._holding_repo.get_period_base(asset.id, period_start, today)
             result.append({
                 "id": asset.id,
                 "ticker": asset.ticker,
                 "name": asset.name,
                 "asset_class": asset.asset_class,
+                "currency": asset.currency,
                 "last_price": latest.price if latest else None,
                 "last_date": latest.price_date if latest else None,
+                "month_base_price": base.price if base else None,
+                "month_base_date": base.price_date if base else None,
             })
         return result
 
@@ -134,8 +150,9 @@ class PortfolioService:
         result.sort(key=lambda a: a.total_value, reverse=True)
         return result
 
-    def _build_position(self, asset: object) -> Position | None:
+    def _build_position(self, asset: object, rates: dict[Currency, Decimal]) -> Position | None:
         tracking_type = AssetTrackingType(asset.tracking_type)
+        currency = Currency(asset.currency)
         latest_price = self._holding_repo.get_latest(asset.id)
 
         if latest_price is None:
@@ -143,13 +160,17 @@ class PortfolioService:
 
         total_cost = self._calculate_total_cost(asset.id)
 
+        # Preço em moeda nativa → converte para BRL
+        native_price = latest_price.price
+        price_brl = convert_to_brl(native_price, currency, rates)
+
         if tracking_type == AssetTrackingType.QUANTITY_PRICE:
             quantity, average_price = self._calculate_quantity_and_avg_price(asset.id)
-            current_value = (quantity * latest_price.price).quantize(Decimal("0.01"))
+            current_value = (quantity * price_brl).quantize(Decimal("0.01"))
         else:
             quantity = None
             average_price = None
-            current_value = latest_price.price.quantize(Decimal("0.01"))
+            current_value = price_brl.quantize(Decimal("0.01"))
 
         absolute_return = current_value - total_cost
         pct_return = (
@@ -164,9 +185,11 @@ class PortfolioService:
             name=asset.name,
             asset_class=AssetClass(asset.asset_class),
             tracking_type=asset.tracking_type,
+            currency=currency,
             quantity=quantity,
             average_price=average_price,
-            current_price=latest_price.price,
+            current_price=native_price,
+            current_price_brl=price_brl,
             current_value=current_value,
             total_cost=total_cost,
             absolute_return=absolute_return,
@@ -177,18 +200,14 @@ class PortfolioService:
         )
 
     def _calculate_total_cost(self, asset_id: int) -> Decimal:
-        """Soma de INITIAL_BALANCE + BUY + CONTRIBUTION (custo de aquisição)."""
+        """Soma de INITIAL_BALANCE + BUY + CONTRIBUTION (custo de aquisição em BRL)."""
         transactions = self._contribution_repo.get_cost_basis_transactions(asset_id)
         return sum((t.total_amount for t in transactions), Decimal("0"))
 
     def _calculate_quantity_and_avg_price(
         self, asset_id: int
     ) -> tuple[Decimal, Decimal | None]:
-        """Preço médio ponderado móvel (PVPM).
-
-        PVPM = total_custo_compras / total_qty_comprada.
-        SELL reduz a quantidade corrente mas não altera o preço médio.
-        """
+        """Preço médio ponderado móvel (PVPM) em moeda nativa do ativo."""
         all_txs = self._contribution_repo.get_by_asset(asset_id)
 
         total_bought_qty = Decimal("0")

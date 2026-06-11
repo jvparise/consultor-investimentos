@@ -1,4 +1,4 @@
-"""Importação de dados via CSV."""
+"""Importação de dados via CSV InvestorIA ou Extrato XP Investimentos."""
 from __future__ import annotations
 
 import io
@@ -7,6 +7,7 @@ import streamlit as st
 
 from consultor_investimentos.database.connection import get_db
 from consultor_investimentos.importers.csv_parser import compute_file_hash, parse_csv
+from consultor_investimentos.importers.xp_parser import XPParser
 from consultor_investimentos.services.import_service import ImportService
 from consultor_investimentos.services.snapshot_service import SnapshotService
 from consultor_investimentos.ui.state import (
@@ -25,11 +26,11 @@ if msg := st.session_state.pop(ERROR_MSG, None):
 
 st.title("⬆️ Importar Dados")
 
-tab_import, tab_model = st.tabs(["⬆️ Importar CSV", "📋 Modelo de Arquivo"])
+tab_import, tab_model = st.tabs(["⬆️ Importar", "📋 Modelo CSV InvestorIA"])
 
 # ── Tab: Modelo ─────────────────────────────────────────────────────────────────
 with tab_model:
-    st.subheader("Modelo de Arquivo CSV")
+    st.subheader("Modelo de Arquivo CSV — Formato InvestorIA")
     st.markdown("""
 Faça o download do modelo abaixo e preencha com seus dados.
 
@@ -66,22 +67,58 @@ Faça o download do modelo abaixo e preencha com seus dados.
 
 # ── Tab: Importar ───────────────────────────────────────────────────────────────
 with tab_import:
-    col_enc, col_sep = st.columns(2)
-    with col_enc:
-        encoding = st.selectbox("Encoding", ["utf-8", "latin-1"], index=0)
-    with col_sep:
-        separator = st.selectbox("Separador", ["auto", ",", ";"], index=0)
+    source = st.radio(
+        "Tipo de arquivo",
+        options=["CSV InvestorIA", "XP Investimentos"],
+        horizontal=True,
+        help=(
+            "**CSV InvestorIA**: formato padrão do sistema.  \n"
+            "**XP Investimentos**: extrato exportado diretamente pela corretora (CSV ou XLSX)."
+        ),
+    )
+    is_xp = source == "XP Investimentos"
 
-    uploaded = st.file_uploader("Selecione o arquivo CSV", type=["csv", "txt"])
+    if is_xp:
+        st.caption(
+            "💡 Exporte o extrato pela plataforma XP: "
+            "**Extrato → Movimentação → Exportar** (CSV ou Excel)."
+        )
+        col_enc, _ = st.columns([2, 2])
+        with col_enc:
+            encoding = st.selectbox("Encoding (para CSV)", ["utf-8", "latin-1"], index=1)
+        uploaded = st.file_uploader(
+            "Selecione o extrato XP (CSV ou XLSX)",
+            type=["csv", "xlsx", "xls", "txt"],
+        )
+    else:
+        col_enc, col_sep = st.columns(2)
+        with col_enc:
+            encoding = st.selectbox("Encoding", ["utf-8", "latin-1"], index=0)
+        with col_sep:
+            separator = st.selectbox("Separador", ["auto", ",", ";"], index=0)
+        uploaded = st.file_uploader("Selecione o arquivo CSV", type=["csv", "txt"])
 
     if uploaded is not None:
         if st.button("🔍 Pré-visualizar"):
             raw = uploaded.read()
             file_hash = compute_file_hash(raw)
-            transactions, parse_errors = parse_csv(raw, separator=separator, encoding=encoding)
 
-            if parse_errors:
-                for err in parse_errors:
+            if is_xp:
+                parser = XPParser()
+                transactions, parse_errors = parser.parse(raw, encoding=encoding)
+            else:
+                transactions, parse_errors = parse_csv(
+                    raw,
+                    separator=separator,  # type: ignore[possibly-undefined]
+                    encoding=encoding,
+                )
+
+            # Erros de parse mostrados como warnings (não bloqueantes se houver transações)
+            critical_errors = [e for e in parse_errors if not transactions]
+            row_warnings = [e for e in parse_errors if transactions]
+
+            if critical_errors:
+                for err in critical_errors:
                     st.error(err)
                 st.session_state[IMPORT_PARSED_ROWS] = []
                 st.session_state[IMPORT_PREVIEW] = None
@@ -94,6 +131,10 @@ with tab_import:
                 st.session_state[IMPORT_FILE_HASH] = None
                 st.session_state[IMPORT_FILE_NAME] = None
             else:
+                if row_warnings:
+                    for w in row_warnings:
+                        st.warning(w)
+
                 with get_db() as session:
                     preview = ImportService(session).validate(transactions, file_hash=file_hash)
                 st.session_state[IMPORT_PARSED_ROWS] = transactions

@@ -19,6 +19,30 @@ class HoldingRepository:
             .limit(1)
         ).scalar_one_or_none()
 
+    def get_period_base(self, asset_id: int, period_start: date, ref_date: date) -> AssetPrice | None:
+        """Retorna o primeiro registro dentro do período ou o último antes dele."""
+        first_in_period = self._session.execute(
+            select(AssetPrice)
+            .where(
+                AssetPrice.asset_id == asset_id,
+                AssetPrice.price_date >= period_start,
+                AssetPrice.price_date <= ref_date,
+            )
+            .order_by(AssetPrice.price_date.asc())
+            .limit(1)
+        ).scalar_one_or_none()
+        if first_in_period is not None:
+            return first_in_period
+        return self._session.execute(
+            select(AssetPrice)
+            .where(
+                AssetPrice.asset_id == asset_id,
+                AssetPrice.price_date < period_start,
+            )
+            .order_by(AssetPrice.price_date.desc())
+            .limit(1)
+        ).scalar_one_or_none()
+
     def get_on_date(self, asset_id: int, target_date: date) -> AssetPrice | None:
         return self._session.execute(
             select(AssetPrice).where(

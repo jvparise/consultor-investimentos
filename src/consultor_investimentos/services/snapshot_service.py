@@ -3,13 +3,15 @@ from decimal import Decimal
 
 from sqlalchemy.orm import Session
 
-from consultor_investimentos.config import AssetClass, AssetTrackingType, SnapshotType, TransactionType
+from consultor_investimentos.config import AssetClass, AssetTrackingType, Currency, SnapshotType, TransactionType
 from consultor_investimentos.repositories import (
     AssetRepository,
     ContributionRepository,
+    ExchangeRateRepository,
     HoldingRepository,
     SnapshotRepository,
 )
+from consultor_investimentos.utils.currency import convert_to_brl
 from consultor_investimentos.services.dto import SnapshotPoint
 
 
@@ -19,6 +21,7 @@ class SnapshotService:
         self._holding_repo = HoldingRepository(session)
         self._asset_repo = AssetRepository(session)
         self._contribution_repo = ContributionRepository(session)
+        self._fx_repo = ExchangeRateRepository(session)
 
     def try_auto_snapshot(self) -> bool:
         """Tenta criar snapshot automático para hoje, se ainda não existir.
@@ -69,6 +72,9 @@ class SnapshotService:
             ap.asset_id: ap.price for ap in latest_prices
         }
 
+        rates = self._fx_repo.get_rates()
+        rates[Currency.BRL] = Decimal("1")
+
         assets = self._asset_repo.get_active()
         by_class: dict[AssetClass, Decimal] = {}
         total_value = Decimal("0")
@@ -80,14 +86,17 @@ class SnapshotService:
                 all_have_prices = False
                 continue
 
+            currency = Currency(asset.currency)
+            price_brl = convert_to_brl(unit_price, currency, rates)
+
             tracking_type = AssetTrackingType(asset.tracking_type)
             if tracking_type == AssetTrackingType.VALUE_ONLY:
-                position_value = unit_price
+                position_value = price_brl
             else:
                 qty = self._current_quantity(asset.id)
                 if qty <= 0:
                     continue
-                position_value = (qty * unit_price).quantize(Decimal("0.01"))
+                position_value = (qty * price_brl).quantize(Decimal("0.01"))
 
             asset_class = AssetClass(asset.asset_class)
             by_class[asset_class] = by_class.get(asset_class, Decimal("0")) + position_value

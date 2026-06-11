@@ -7,6 +7,7 @@ import streamlit as st
 from consultor_investimentos.config import (
     ALLOWED_TRANSACTION_TYPES,
     AssetTrackingType,
+    Currency,
     TransactionType,
 )
 from consultor_investimentos.database.connection import get_db
@@ -14,7 +15,7 @@ from consultor_investimentos.services.portfolio_service import PortfolioService
 from consultor_investimentos.services.snapshot_service import SnapshotService
 from consultor_investimentos.services.transaction_service import TransactionService
 from consultor_investimentos.ui.components.metrics import fmt_brl, fmt_brl_private, fmt_date_br, fmt_price, fmt_qty
-from consultor_investimentos.utils.brl import parse_brl
+from consultor_investimentos.utils.brl import fmt_brl_input, parse_brl
 from consultor_investimentos.ui.state import (
     CONFIRM_DELETE_TX_ID,
     ERROR_MSG,
@@ -76,6 +77,39 @@ is_qp = tracking_type == AssetTrackingType.QUANTITY_PRICE
 badge = "📊 Quantidade × Preço" if is_qp else "📊 Valor Total"
 st.caption(badge)
 
+asset_currency = Currency(selected_asset.get("currency", "BRL"))
+is_foreign = asset_currency != Currency.BRL
+use_foreign = False
+foreign_rate: Decimal = Decimal("1")
+
+if is_foreign:
+    from consultor_investimentos.services.exchange_rate_service import ExchangeRateService
+    with get_db() as _fx_session:
+        _saved_rate = ExchangeRateService(_fx_session).get_rate(asset_currency)
+    col_curr, col_rate = st.columns([2, 3])
+    with col_curr:
+        curr_option = st.radio(
+            "Moeda",
+            [f"R$ BRL", f"{asset_currency.value}"],
+            horizontal=True,
+            key=f"currency_{selected_id}",
+        )
+        use_foreign = curr_option == asset_currency.value
+    with col_rate:
+        if use_foreign:
+            default_rate = fmt_brl_input(_saved_rate) if _saved_rate else ""
+            rate_input = st.text_input(
+                f"Cotação {asset_currency.value}/BRL",
+                value=default_rate,
+                placeholder="ex: 5,70",
+                key=f"fx_rate_{selected_id}",
+                help=f"1 {asset_currency.value} = ? BRL",
+            )
+            try:
+                foreign_rate = parse_brl(rate_input) if rate_input.strip() else Decimal("1")
+            except ValueError:
+                foreign_rate = Decimal("1")
+
 # ── Carrega posição atual e histórico ──────────────────────────────────────────
 with get_db() as session:
     current_pos = PortfolioService(session).get_position(selected_id)
@@ -121,6 +155,8 @@ price_val: Decimal = Decimal("0")
 total_val: Decimal = Decimal("0")
 new_pos_val: Decimal | None = None
 
+currency_symbol = asset_currency.value if use_foreign else "R$"
+
 if is_buy_sell:
     col_qty, col_price = st.columns(2)
     with col_qty:
@@ -134,18 +170,23 @@ if is_buy_sell:
         qty_val = Decimal(str(qty_input))
     with col_price:
         price_input = st.text_input(
-            "Preço unitário (R$)",
+            f"Preço unitário ({currency_symbol})",
             placeholder="ex: 62,50",
             key=f"tx_price_{selected_id}_{tx_type_selected}",
         )
         try:
-            price_val = parse_brl(price_input) if price_input.strip() else Decimal("0")
+            price_raw = parse_brl(price_input) if price_input.strip() else Decimal("0")
+            # BRL total para custo; price_raw em moeda nativa vai para asset_prices via unit_price
+            price_val = (price_raw * foreign_rate).quantize(Decimal("0.01")) if use_foreign else price_raw
         except ValueError:
             price_val = Decimal("0")
 
     if qty_val > 0 and price_val > 0:
         total_val = (qty_val * price_val).quantize(Decimal("0.01"))
-        st.metric("Total calculado", fmt_brl_private(total_val))
+        label = f"Total calculado{' (em BRL)' if use_foreign else ''}"
+        st.metric(label, fmt_brl_private(total_val))
+        if use_foreign and price_raw > 0:
+            st.caption(f"{asset_currency.value} {float(price_raw):.2f} × {float(foreign_rate):.2f} = {fmt_brl_private(price_val)} por unidade")
     else:
         st.caption("Preencha quantidade e preço para ver o total.")
         total_val = Decimal("0")
@@ -162,20 +203,24 @@ if is_buy_sell:
 
 else:
     total_raw = st.text_input(
-        "Valor (R$)",
+        f"Valor ({currency_symbol})",
         placeholder="ex: 1.500,00",
         key=f"tx_total_{selected_id}_{tx_type_selected}",
         help="Para Resgate: valor retirado. Para Aporte: valor aplicado.",
     )
     try:
-        total_val = parse_brl(total_raw) if total_raw.strip() else Decimal("0")
+        total_raw_val = parse_brl(total_raw) if total_raw.strip() else Decimal("0")
+        total_val = (total_raw_val * foreign_rate).quantize(Decimal("0.01")) if use_foreign else total_raw_val
     except ValueError:
         total_val = Decimal("0")
     fees_val = Decimal("0")
 
+    if use_foreign and total_val > 0:
+        st.caption(f"{asset_currency.value} {float(total_raw_val):.2f} × {float(foreign_rate):.2f} = {fmt_brl_private(total_val)}")
+
     if is_value_update:
         new_pos_raw = st.text_input(
-            "Novo valor da posição após operação (R$) — opcional",
+            f"Novo valor da posição após operação ({currency_symbol}) — opcional",
             placeholder="ex: 25.000,00",
             key=f"tx_newpos_{selected_id}_{tx_type_selected}",
             help=(
@@ -184,7 +229,9 @@ else:
             ),
         )
         try:
-            new_pos_val = parse_brl(new_pos_raw) if new_pos_raw.strip() else None
+            new_pos_raw_val = parse_brl(new_pos_raw) if new_pos_raw.strip() else None
+            # Novo valor da posição é salvo em moeda nativa para asset_prices
+            new_pos_val = new_pos_raw_val
         except ValueError:
             new_pos_val = None
 
@@ -223,13 +270,15 @@ if st.button("✅ Registrar", type="primary", key=f"tx_submit_{selected_id}"):
         try:
             with get_db() as session:
                 tx_svc = TransactionService(session)
+                # unit_price em moeda nativa → asset_prices; total_amount sempre em BRL
+                native_unit_price = price_raw if (is_buy_sell and use_foreign) else (price_val if is_buy_sell else None)
                 tx_svc.register(
                     asset_id=selected_id,
                     transaction_type=transaction_type,
                     tx_date=tx_date,
                     total_amount=final_total,
                     quantity=qty_val if is_buy_sell else None,
-                    unit_price=price_val if is_buy_sell else None,
+                    unit_price=native_unit_price,
                     fees=fees_val if is_buy_sell else Decimal("0"),
                     notes=notes_val,
                     new_position_value=new_pos_val,

@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
 
-from consultor_investimentos.config import AssetClass, AssetTrackingType, IncomeType
+from consultor_investimentos.config import AssetClass, AssetTrackingType, Currency, IncomeType
 from consultor_investimentos.repositories import AssetRepository
 from consultor_investimentos.repositories.settings_repository import SettingsRepository
 from consultor_investimentos.services.dto import SettingsDTO
@@ -55,6 +55,7 @@ class SettingsService:
         name: str,
         asset_class: AssetClass,
         tracking_type: AssetTrackingType,
+        currency: Currency = Currency.BRL,
         notes: str | None = None,
     ) -> int:
         if asset_class == AssetClass.CASH and tracking_type != AssetTrackingType.VALUE_ONLY:
@@ -71,6 +72,7 @@ class SettingsService:
             asset_class=asset_class,
             income_type=income_type,
             tracking_type=tracking_type,
+            currency=currency,
             notes=notes,
         )
         return asset.id
@@ -84,6 +86,7 @@ class SettingsService:
                 "name": a.name,
                 "asset_class": a.asset_class,
                 "tracking_type": a.tracking_type,
+                "currency": a.currency,
                 "notes": a.notes or "",
             }
             for a in assets
@@ -95,8 +98,9 @@ class SettingsService:
         name: str | None = None,
         notes: str | None = None,
         asset_class: AssetClass | None = None,
+        currency: Currency | None = None,
     ) -> None:
-        self._asset_repo.update(id=asset_id, name=name, notes=notes, asset_class=asset_class)
+        self._asset_repo.update(id=asset_id, name=name, notes=notes, asset_class=asset_class, currency=currency)
 
     def deactivate_asset(self, asset_id: int) -> None:
         self._asset_repo.deactivate(id=asset_id)
