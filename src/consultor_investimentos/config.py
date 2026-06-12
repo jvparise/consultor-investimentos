@@ -62,6 +62,14 @@ ALLOWED_TRANSACTION_TYPES: dict[AssetTrackingType, list[TransactionType]] = {
 }
 
 
+class Benchmark(str, Enum):
+    CDI = "CDI"
+    SELIC = "SELIC"
+    IPCA = "IPCA"
+    IBOV = "IBOV"
+    SP500 = "SP500"
+
+
 class SnapshotType(str, Enum):
     MANUAL = "Manual"
     CALCULATED = "Calculado"

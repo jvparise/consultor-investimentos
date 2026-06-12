@@ -9,8 +9,10 @@ Sistema pessoal de gestão patrimonial — acompanhamento de carteira, relatóri
 | Módulo | Descrição |
 |--------|-----------|
 | **Dashboard** | Visão geral do patrimônio, metas e próxima alocação recomendada |
+| **Benchmark** | Comparação da carteira vs CDI, SELIC, IPCA, Ibovespa e S&P500 em base 100 |
 | **Carteira** | Posições atuais, rentabilidade, alocação por classe e projeções FIRE |
 | **Relatório Mensal** | Performance por ativo e classe: valorização, dividendos, resultado total |
+| **Atualizar Cotações** | Atualização automática de preços via Yahoo Finance e câmbio via Banco Central |
 | **Atualizar Posições** | Atualização em lote de ativos VALUE_ONLY (fundos, renda fixa) com comparação mês/ano |
 | **Transações** | Registro e histórico de movimentações por ativo |
 | **Importar** | Importação via CSV InvestorIA ou extrato XP Investimentos (CSV/XLSX) |
@@ -57,7 +59,7 @@ Acesse `http://localhost:8501` no navegador.
 uv run pytest tests/ -q
 ```
 
-379 testes — 26 suítes (16 unit + 10 integration).
+475 testes — 32 suítes (22 unit + 10 integration).
 
 ---
 
@@ -154,11 +156,10 @@ SQLite (arquivo local)
 
 ---
 
-## Roadmap V1.3
+## Roadmap V1.5
 
-- Histórico de cotações automático via API (B3 / Yahoo Finance)
 - Relatório anual consolidado
-- Comparação de carteira com benchmarks (CDI, IBOV, S&P 500)
 - Exportação de relatórios para XLSX
 - Notificações de rebalanceamento
 - Suporte a mais moedas (GBP, CHF)
+- Comparação de carteira com benchmarks personalizados

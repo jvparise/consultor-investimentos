@@ -1,4 +1,5 @@
 from consultor_investimentos.repositories.asset_repository import AssetRepository
+from consultor_investimentos.repositories.benchmark_repository import BenchmarkRepository
 from consultor_investimentos.repositories.contribution_repository import ContributionRepository
 from consultor_investimentos.repositories.exchange_rate_repository import ExchangeRateRepository
 from consultor_investimentos.repositories.goal_repository import GoalRepository
@@ -10,6 +11,7 @@ from consultor_investimentos.repositories.snapshot_repository import SnapshotRep
 
 __all__ = [
     "AssetRepository",
+    "BenchmarkRepository",
     "ContributionRepository",
     "ExchangeRateRepository",
     "GoalRepository",

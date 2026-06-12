@@ -2,6 +2,7 @@ from datetime import date, datetime, timedelta
 from decimal import Decimal
 
 import httpx
+from httpx import HTTPError
 
 _PTAX_URL = (
     "https://olinda.bcb.gov.br/olinda/servico/PTAX/versao/v1/odata/"
@@ -90,6 +91,29 @@ class BCBProvider:
 
     def get_ipca(self) -> Decimal | None:
         return self._get_sgs(_IPCA_CODE, "ipca")
+
+    def get_series_range(
+        self, code: int, start: date, end: date
+    ) -> list[tuple[date, Decimal]]:
+        """Busca série histórica do SGS para um intervalo de datas. Nunca lança exceção."""
+        url = f"https://api.bcb.gov.br/dados/serie/bcdata.sgs.{code}/dados"
+        params = {
+            "formato": "json",
+            "dataInicial": start.strftime("%d/%m/%Y"),
+            "dataFinal": end.strftime("%d/%m/%Y"),
+        }
+        try:
+            resp = httpx.get(url, params=params, timeout=self._timeout)
+            resp.raise_for_status()
+            data = resp.json()
+            result = []
+            for item in data:
+                d = datetime.strptime(item["data"], "%d/%m/%Y").date()
+                raw = str(item["valor"]).replace(",", ".")
+                result.append((d, Decimal(raw)))
+            return result
+        except Exception:
+            return []
 
     def clear_cache(self) -> None:
         self._cache.clear()

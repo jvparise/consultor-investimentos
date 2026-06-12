@@ -187,6 +187,45 @@ class ImportResult:
 
 
 @dataclass
+class BenchmarkPointDTO:
+    date: date
+    value: Decimal
+
+
+@dataclass
+class BenchmarkSeriesDTO:
+    name: str
+    points: list["BenchmarkPointDTO"]
+
+    def is_empty(self) -> bool:
+        return len(self.points) == 0
+
+    def last_value(self) -> Decimal | None:
+        return self.points[-1].value if self.points else None
+
+    def rentability_pct(self) -> Decimal | None:
+        lv = self.last_value()
+        if lv is None:
+            return None
+        return (lv - Decimal("100")).quantize(Decimal("0.01"))
+
+
+@dataclass
+class PortfolioVsBenchmarkDTO:
+    portfolio: "BenchmarkSeriesDTO"
+    cdi: "BenchmarkSeriesDTO"
+    selic: "BenchmarkSeriesDTO"
+    ipca: "BenchmarkSeriesDTO"
+    ibov: "BenchmarkSeriesDTO"
+    sp500: "BenchmarkSeriesDTO"
+    start_date: date
+    end_date: date
+
+    def all_series(self) -> list["BenchmarkSeriesDTO"]:
+        return [self.portfolio, self.cdi, self.selic, self.ipca, self.ibov, self.sp500]
+
+
+@dataclass
 class GoalProgress:
     goal_id: int
     goal_name: str

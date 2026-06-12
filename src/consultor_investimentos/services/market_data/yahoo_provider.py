@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 from decimal import Decimal
 
 import yfinance as yf
@@ -58,6 +58,24 @@ class YahooProvider:
 
     def to_yahoo_ticker(self, ticker: str, asset_class: str, currency: str) -> str:
         return _to_yahoo_ticker(ticker, asset_class, currency)
+
+    def get_history(
+        self, yahoo_ticker: str, start: date, end: date
+    ) -> list[tuple[date, Decimal]]:
+        """Busca histórico de fechamento para um intervalo de datas. Nunca lança exceção."""
+        try:
+            ticker = yf.Ticker(yahoo_ticker)
+            end_exclusive = end + timedelta(days=1)
+            hist = ticker.history(start=start.isoformat(), end=end_exclusive.isoformat())
+            if hist is None or hist.empty:
+                return []
+            result = []
+            for ts, row in hist.iterrows():
+                d = ts.date() if hasattr(ts, "date") else ts.to_pydatetime().date()
+                result.append((d, Decimal(str(row["Close"]))))
+            return result
+        except Exception:
+            return []
 
     def clear_cache(self) -> None:
         self._cache.clear()

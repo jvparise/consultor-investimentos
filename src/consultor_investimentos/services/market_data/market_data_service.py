@@ -141,6 +141,11 @@ class MarketDataService:
             ))
         return results
 
+    def update_benchmarks(self) -> dict[str, int]:
+        """Atualiza histórico de benchmarks (CDI, SELIC, IPCA, IBOV, SP500)."""
+        from consultor_investimentos.services.benchmark_service import BenchmarkService
+        return BenchmarkService(self._session, yahoo=self._yahoo, bcb=self._bcb).update_benchmarks()
+
     def get_price_status(self) -> list[dict]:
         """Retorna status de preços de todos os ativos ativos para exibição."""
         assets = self._asset_repo.get_active()

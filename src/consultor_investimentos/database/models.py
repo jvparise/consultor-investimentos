@@ -222,6 +222,23 @@ class UserSettings(Base):
         return f"<UserSettings user='{self.user_name}'>"
 
 
+class BenchmarkHistory(Base):
+    __tablename__ = "benchmark_history"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    benchmark_name: Mapped[str] = mapped_column(String(10), nullable=False, index=True)
+    reference_date: Mapped[date] = mapped_column(Date, nullable=False)
+    value: Mapped[Decimal] = mapped_column(Numeric(20, 8), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=func.now())
+
+    __table_args__ = (
+        UniqueConstraint("benchmark_name", "reference_date", name="uq_benchmark_date"),
+    )
+
+    def __repr__(self) -> str:
+        return f"<BenchmarkHistory {self.benchmark_name} {self.reference_date} {self.value}>"
+
+
 class ExchangeRate(Base):
     __tablename__ = "exchange_rates"
 
