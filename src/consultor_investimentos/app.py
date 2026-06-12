@@ -29,6 +29,7 @@ pages = st.navigation([
     st.Page("ui/pages/dashboard.py",          title="Dashboard",          icon="📊", default=True),
     st.Page("ui/pages/performance_report.py", title="Relatório Mensal",   icon="📈"),
     st.Page("ui/pages/portfolio.py",          title="Carteira",           icon="💼"),
+    st.Page("ui/pages/market_update.py",      title="Atualizar Cotações", icon="📡"),
     st.Page("ui/pages/value_only_update.py",  title="Atualizar Posições", icon="🔄"),
     st.Page("ui/pages/transactions.py",       title="Transações",         icon="💸"),
     st.Page("ui/pages/import_page.py",        title="Importar",           icon="⬆️"),

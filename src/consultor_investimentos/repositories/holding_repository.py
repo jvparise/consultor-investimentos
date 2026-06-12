@@ -90,6 +90,7 @@ class HoldingRepository:
         asset_id: int,
         price_date: date,
         price: Decimal,
+        source: str = "MANUAL",
     ) -> AssetPrice:
         if price <= Decimal("0"):
             raise ValueError(
@@ -99,6 +100,7 @@ class HoldingRepository:
         existing = self.get_on_date(asset_id, price_date)
         if existing is not None:
             existing.price = price
+            existing.source = source
             self._session.flush()
             return existing
 
@@ -106,7 +108,7 @@ class HoldingRepository:
             asset_id=asset_id,
             price_date=price_date,
             price=price,
-            source="MANUAL",
+            source=source,
         )
         self._session.add(record)
         self._session.flush()
